@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiFetch, authHeaders } from "../services/api";
 
 export default function OAuth2Callback() {
   const navigate = useNavigate();
@@ -12,7 +13,28 @@ export default function OAuth2Callback() {
     if (accessToken) localStorage.setItem("accessToken", accessToken);
     if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
 
-    window.location.replace("/"); 
+    // 로그인 후 내 프로필 조회
+    (async () => {
+      try {
+        const { ok, data } = await apiFetch("/api/me", {
+          headers: { ...authHeaders() },
+        });
+
+        if (!ok) {
+          navigate("/login");
+          return;
+        }
+
+        const { name, birth, gender, phone } = data;
+        if (!name || !birth || !gender || !phone) {
+          navigate("/profile-setup");   // 값이 하나라도 없으면 이동
+        } else {
+          navigate("/");                // 모두 있으면 홈으로
+        }
+      } catch {
+        navigate("/login");
+      }
+    })();
   }, [navigate]);
 
   return <div>로그인 처리중...</div>;

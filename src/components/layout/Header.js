@@ -1,11 +1,13 @@
 // src/components/layout/Header.jsx
 import React, { useEffect, useState } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
+import useUser from "../../hooks/useUser";   // ⬅️ 추가
 import "./Header.css";
 
 export default function Header({ user, onLogout }) {
   const isLoggedIn = !!user?.name;
   const isAdmin = user?.role === "ADMIN";
+  const { needsSetup } = useUser();
 
   const [categories, setCategories] = useState([]);
   const [boardTypes, setBoardTypes] = useState([]);
@@ -112,7 +114,9 @@ export default function Header({ user, onLogout }) {
                 안녕하세요, <strong>{user.name}</strong>
                 {isAdmin && <span className="badge">관리자</span>} 님
               </span>
-              <Link className="link-btn" to="/me">마이페이지</Link>
+              <Link className="link-btn" to={needsSetup ? "/profile-setup" : "/me"}>
+                {needsSetup ? "프로필 설정" : "마이페이지"}
+              </Link>
               <button className="link-btn" onClick={onLogout}>로그아웃</button>
             </>
           ) : (
