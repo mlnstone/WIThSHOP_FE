@@ -112,6 +112,7 @@ export default function Header({ user, onLogout }) {
                 안녕하세요, <strong>{user.name}</strong>
                 {isAdmin && <span className="badge">관리자</span>} 님
               </span>
+              <Link className="link-btn" to="/me">마이페이지</Link>
               <button className="link-btn" onClick={onLogout}>로그아웃</button>
             </>
           ) : (
