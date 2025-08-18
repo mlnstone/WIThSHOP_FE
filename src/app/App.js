@@ -8,8 +8,8 @@ import ProfileGate from "./ProfileGate";
 
 export default function App() {
   const { user, logout } = useUser();
-
   return (
+    
     <Router>
       <Header user={user} onLogout={logout} />
       <ProfileGate>
