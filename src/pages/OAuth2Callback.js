@@ -25,8 +25,8 @@ export default function OAuth2Callback() {
           return;
         }
 
-        const { name, birth, gender, phone } = data;
-        if (!name || !birth || !gender || !phone) {
+        const { userName, birth, gender, phone } = data;
+        if (!userName && !birth && !gender && !phone) {
           navigate("/profile-setup");   // 값이 하나라도 없으면 이동
         } else {
           navigate("/");                // 모두 있으면 홈으로

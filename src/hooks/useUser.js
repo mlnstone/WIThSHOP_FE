@@ -69,7 +69,7 @@ export default function useUser() {
   }, [token]);
 
   const needsSetup =
-    !!token && !!me && (!me.userName || !me.birth || !me.gender || !me.phone);
+    !!token && !!me && (!me.userName && !me.birth && !me.gender && !me.phone);
 
   const logout = () => {
     localStorage.removeItem("accessToken");
@@ -78,5 +78,29 @@ export default function useUser() {
     window.location.reload();
   };
 
-  return { user, me, needsSetup, hydrated, logout, accessToken: token };
+  const refreshMe = async () => {
+    if (!token) return null;
+    try {
+      const { data } = await apiFetch("/api/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (data) {
+        setMe(data);
+        const raw = pickNameFromApi(data);
+        const finalName = raw ? (isEmail(raw) ? localPart(raw) : raw) : user.name;
+        if (finalName) localStorage.setItem("displayName", finalName);
+        setUser((u) => ({
+          ...u,
+          name: finalName || u.name,
+          role: (data?.role || "").replace("ROLE_", "") || u.role,
+        }));
+      }
+      return data;
+    } finally {
+      setHydrated(true);
+    }
+  };
+
+  return { user, me, needsSetup, hydrated, logout, accessToken: token, refreshMe };
+
 }

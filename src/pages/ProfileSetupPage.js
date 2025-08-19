@@ -1,6 +1,8 @@
+// src/pages/ProfileSetupPage.jsx
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { apiFetch } from "../services/api";
+import useUser from "../hooks/useUser";
 
 const birthRule = /^(?:\d{4}-\d{2}-\d{2}|\d{8})$/;
 const phoneRule = /^[0-9\-+]{8,20}$/;
@@ -16,23 +18,45 @@ export default function ProfileSetupPage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const navigate = useNavigate();
 
-  // 이미 완료한 사용자는 접근 막기
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { refreshMe } = useUser();
+
+  // 이미 완료한 사용자는 접근 막기 + 쿼리 토큰 흡수
   useEffect(() => {
+    // 1) /profile-setup?accessToken=...&refreshToken=... 으로 들어온 경우 토큰 저장
+    const qs = new URLSearchParams(location.search);
+    const accessToken = qs.get("accessToken");
+    const refreshToken = qs.get("refreshToken");
+    if (accessToken) localStorage.setItem("accessToken", accessToken);
+    if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+    if (accessToken || refreshToken) {
+      // 주소 정리 (쿼리 제거)
+      window.history.replaceState({}, "", location.pathname);
+    }
+
+    // 2) 내 프로필 확인해서 이미 완료면 홈으로
     (async () => {
       const token = localStorage.getItem("accessToken");
-      if (!token) { navigate("/login", { replace: true }); return; }
+      if (!token) {
+        navigate("/login", { replace: true });
+        return;
+      }
       const { ok, data } = await apiFetch("/api/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setLoading(false);
-      if (!ok) { navigate("/", { replace: true }); return; }
-
+      if (!ok) {
+        navigate("/", { replace: true });
+        return;
+      }
       const done = data?.userName && data?.birth && data?.gender && data?.phone;
-      if (done) navigate("/", { replace: true });
+      if (done) {
+        navigate("/", { replace: true });
+      }
     })();
-  }, [navigate]);
+  }, [location, navigate]);
 
   const onChange = (e) => {
     const { name, value } = e.target;
@@ -56,6 +80,7 @@ export default function ProfileSetupPage() {
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
+
     try {
       setSubmitting(true);
       const token = localStorage.getItem("accessToken");
@@ -65,6 +90,7 @@ export default function ProfileSetupPage() {
         gender: form.gender,
         phone: form.phone.trim(),
       };
+
       const { ok, data } = await apiFetch("/api/me/profile", {
         method: "PUT",
         headers: {
@@ -73,14 +99,23 @@ export default function ProfileSetupPage() {
         },
         body: JSON.stringify(payload),
       });
+
       if (!ok) {
-        // 백엔드 표준 에러 표시
         if (typeof data === "string") setError(data);
         else setError(data?.message || data?.error || "프로필 설정에 실패했습니다.");
         return;
       }
-      // 성공 → 홈(또는 마이페이지)
-      navigate("/", { replace: true, state: { profileCompleted: true } });
+
+      // 서버 저장 성공 → 전역 me 동기화가 끝날 때까지 기다림
+      await refreshMe();
+      navigate("/complete", { replace: true});
+
+      alert("프로필이 저장되었습니다!");
+      // 홈 진입 시 ProfileGate 한 번만 우회
+      navigate("/complete", {
+        replace: true,
+        state: { profileCompleted: true, bypassProfileGateOnce: true },
+      });
     } catch {
       setError("프로필 설정에 실패했습니다.");
     } finally {

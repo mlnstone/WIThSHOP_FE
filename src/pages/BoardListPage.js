@@ -7,6 +7,9 @@ export default function BoardListPage() {
   const [pageData, setPageData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ✨ 추가: 로그인 사용자 정보
+  const [me, setMe] = useState(null);
+
   // 쿼리
   const page   = useMemo(() => Number(searchParams.get("page") || 0), [searchParams]); // 0-base
   const search = searchParams.get("search") || "";
@@ -15,6 +18,24 @@ export default function BoardListPage() {
 
   // 제목용: 보드 타입 이름
   const [boardTypeName, setBoardTypeName] = useState("게시판");
+
+  // ✨ 추가: 토큰 헤더 헬퍼
+  const authHeaders = () => {
+    const token = localStorage.getItem("accessToken");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
+  // ✨ 추가: 내 정보 로드 (/api)
+  useEffect(() => {
+    fetch("/api", { headers: { Accept: "application/json", ...authHeaders() } })
+      .then(async (res) => {
+        if (!res.ok) throw new Error("unauth");
+        return res.json();
+      })
+      .then(setMe)
+      .catch(() => setMe(null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 최초 1회
 
   // 타입 이름 가져오기 (단건 API가 없으면 리스트에서 찾아 사용)
   useEffect(() => {
@@ -43,7 +64,7 @@ export default function BoardListPage() {
     const qs = new URLSearchParams({
       page,
       size: 10,
-      sort: `createdAt,${sort}`, // ← 정렬 파라미터 추가
+      sort: `createdAt,${sort}`,
       ...(search ? { search } : {}),
       ...(typeId ? { typeId } : {}),
     });
@@ -58,21 +79,18 @@ export default function BoardListPage() {
       .finally(() => setLoading(false));
   }, [page, search, typeId, sort]);
 
-  // 쿼리 갱신 헬퍼 (page/검색/정렬/타입 모두 유지)
   const setParams = (overrides) => {
     setSearchParams({
       page: String(overrides.page ?? page),
       ...(search ? { search } : {}),
       ...(typeId ? { typeId } : {}),
-      sort, // 현재 정렬 유지
+      sort,
       ...("sort" in overrides ? { sort: overrides.sort } : {}),
     });
   };
 
-  // 페이지 이동 시 쿼리 유지
   const goPage = (p) => setParams({ page: p });
 
-  // 검색 제출
   const onSubmitSearch = (e) => {
     e.preventDefault();
     const input = e.currentTarget.querySelector("input[name=search]");
@@ -80,17 +98,16 @@ export default function BoardListPage() {
       page: "0",
       ...(input.value ? { search: input.value } : {}),
       ...(typeId ? { typeId } : {}),
-      sort, // 정렬 유지
+      sort,
     });
   };
 
-  // 정렬 버튼 처리
   const setSortOrder = (order) => {
     setSearchParams({
-      page: "0", // 정렬 바꾸면 첫 페이지로
+      page: "0",
       ...(search ? { search } : {}),
       ...(typeId ? { typeId } : {}),
-      sort: order, // asc | desc
+      sort: order,
     });
   };
 
@@ -99,25 +116,27 @@ export default function BoardListPage() {
 
   const {
     content = [],
-    number = 0,        // 현재 페이지(0-base)
-    totalPages = 1,    // 총 페이지 수
+    number = 0,
+    totalPages = 1,
     first = true,
     last = true,
   } = pageData;
 
-  // --- 블록 페이지네이션(5개 단위) ---
   const blockSize = 5;
   const currentBlock = Math.floor(number / blockSize);
   const startPage = currentBlock * blockSize;
   const endPage = Math.min(startPage + blockSize - 1, totalPages - 1);
+
+  // ✨ 글쓰기 링크 (typeId 유지)
+  const writeLink = typeId ? `/board/new?typeId=${typeId}` : "/board/new";
 
   return (
     <div className="container py-4">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h3 className="m-0">{boardTypeName}</h3>
 
-        {/* 정렬 버튼 */}
         <div className="d-flex gap-2">
+          {/* 정렬 버튼 */}
           <button
             className={`btn ${sort === "desc" ? "btn-primary" : "btn-outline-primary"}`}
             onClick={() => setSortOrder("desc")}
@@ -130,6 +149,13 @@ export default function BoardListPage() {
           >
             오래된순
           </button>
+
+          {/* ✨ 관리자 전용 글쓰기 버튼 */}
+          {me?.role === "ADMIN" && (
+            <Link to={writeLink} className="btn btn-success">
+              글쓰기
+            </Link>
+          )}
         </div>
       </div>
 
@@ -155,7 +181,6 @@ export default function BoardListPage() {
             <div className="d-flex justify-content-between">
               <strong>{b.boardTitle}</strong>
               <small className="text-muted">
-                {/* yyyy-MM-dd HH:mm (분까지만) */}
                 {b.createdAt ? b.createdAt.replace("T", " ").slice(0, 16) : ""}
               </small>
             </div>
@@ -166,18 +191,11 @@ export default function BoardListPage() {
         ))}
       </div>
 
-      {/* 페이지네이션: « < 1 2 3 4 5 > » */}
+      {/* 페이지네이션 */}
       <div className="d-flex gap-2 justify-content-center mt-4">
-        {/* 맨 앞으로 */}
-        <button
-          className="btn btn-outline-primary"
-          disabled={first}
-          onClick={() => goPage(0)}
-        >
+        <button className="btn btn-outline-primary" disabled={first} onClick={() => goPage(0)}>
           &laquo;
         </button>
-
-        {/* 이전 블록 */}
         <button
           className="btn btn-outline-primary"
           disabled={startPage === 0}
@@ -185,8 +203,6 @@ export default function BoardListPage() {
         >
           &lt;
         </button>
-
-        {/* 현재 블록의 숫자들 */}
         {Array.from({ length: endPage - startPage + 1 }, (_, i) => {
           const p = startPage + i;
           return (
@@ -199,8 +215,6 @@ export default function BoardListPage() {
             </button>
           );
         })}
-
-        {/* 다음 블록 */}
         <button
           className="btn btn-outline-primary"
           disabled={endPage >= totalPages - 1}
@@ -208,8 +222,6 @@ export default function BoardListPage() {
         >
           &gt;
         </button>
-
-        {/* 맨 뒤로 */}
         <button
           className="btn btn-outline-primary"
           disabled={last}

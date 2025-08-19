@@ -11,8 +11,8 @@ import MyPage from "../pages/MyPage";
 import ChangePasswordPage from "../pages/ChangePasswordPage";
 import SignupPage from "../pages/SignupPage";
 import ProfileSetupPage from "../pages/ProfileSetupPage";
+import CompletePage from "../pages/CompletePage";  
 import ProfileGate from "./ProfileGate";
-import MyPageGate from "./MyPageGate";
 
 function hasToken() {
   return !!localStorage.getItem("accessToken");
@@ -93,8 +93,8 @@ export default function AppRoutes({ user, onLogout }) {
         }
       />
 
-      {/* 프로필 설정 페이지: 게이트 제외(여기로 유도하니까) */}
       <Route path="/profile-setup" element={<ProfileSetupPage />} />
+      <Route path="/complete" element={<CompletePage />} />   {/* ✅ 여기에 추가 */}
 
       {/* 게스트 전용 */}
       <Route
@@ -113,15 +113,7 @@ export default function AppRoutes({ user, onLogout }) {
           </GuestOnly>
         }
       />
-      <Route
-        path="/me"
-        element={
-          <AuthOnly>
-            <MyPageGate />  {/* ← MyPage를 직접 올리는 대신 Gate를 올림 */}
-          </AuthOnly>
-        }
-      />
-
+    
       {/* OAuth 콜백 (중복 선언 제거) */}
       <Route path="/oauth2/callback" element={<OAuth2Callback />} />
     </Routes>

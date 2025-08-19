@@ -9,6 +9,10 @@ import ProfileGate from "./ProfileGate";
 export default function App() {
   const { user, logout } = useUser();
 
+   const accessToken = localStorage.getItem("accessToken");
+  const refreshToken = localStorage.getItem("refreshToken");
+  console.log("AccessToken:", accessToken);
+  console.log("RefreshToken:", refreshToken);
   return (
     
     <Router>
