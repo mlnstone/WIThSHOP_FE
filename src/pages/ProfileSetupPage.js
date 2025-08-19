@@ -110,7 +110,9 @@ export default function ProfileSetupPage() {
       await refreshMe();
 
       alert("프로필이 저장되었습니다!");
+      // window.location.href = "/me";
       window.location.href = "/";
+      
       // 홈 진입 시 ProfileGate 한 번만 우회
       navigate("/", {
         replace: true,

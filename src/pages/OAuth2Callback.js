@@ -1,3 +1,4 @@
+// src/pages/OAuth2Callback.jsx
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch, authHeaders } from "../services/api";
@@ -13,26 +14,34 @@ export default function OAuth2Callback() {
     if (accessToken) localStorage.setItem("accessToken", accessToken);
     if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
 
-    // 로그인 후 내 프로필 조회
+    // URL 깨끗하게(쿼리 제거)
+    if (accessToken || refreshToken) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+
     (async () => {
       try {
         const { ok, data } = await apiFetch("/api/me", {
           headers: { ...authHeaders() },
         });
-
         if (!ok) {
-          navigate("/login");
+          navigate("/login", { replace: true });
           return;
         }
 
-        const { userName, birth, gender, phone } = data;
-        if (!userName && !birth && !gender && !phone) {
-          navigate("/profile-setup");   // 값이 하나라도 없으면 이동
+        const { userName, birth, gender, phone } = data || {};
+        const needsSetup = !userName || !birth || !gender || !phone; // ← 하나라도 없으면 true
+
+        if (needsSetup) {
+          navigate("/profile-setup", { replace: true });
         } else {
-          navigate("/");                // 모두 있으면 홈으로
+          // 홈으로 하드 새로고침(상태 초기화 & 헤더 즉시 반영)
+          window.location.replace("/");
+          // 참고: navigate("/") 뒤에 location.reload()도 가능하지만
+          // replace("/") 한 번이 더 깔끔합니다.
         }
       } catch {
-        navigate("/login");
+        navigate("/login", { replace: true });
       }
     })();
   }, [navigate]);

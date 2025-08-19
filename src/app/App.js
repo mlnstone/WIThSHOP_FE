@@ -13,11 +13,13 @@ export default function App() {
   const refreshToken = localStorage.getItem("refreshToken");
   console.log("AccessToken:", accessToken);
   console.log("RefreshToken:", refreshToken);
+  
   return (
     
     <Router>
       <Header user={user} onLogout={logout} />
       <ProfileGate>
+        
         <AppRoutes user={user} onLogout={logout} />
       </ProfileGate>
     </Router>
