@@ -108,11 +108,11 @@ export default function ProfileSetupPage() {
 
       // 서버 저장 성공 → 전역 me 동기화가 끝날 때까지 기다림
       await refreshMe();
-      navigate("/complete", { replace: true});
 
       alert("프로필이 저장되었습니다!");
+      window.location.href = "/";
       // 홈 진입 시 ProfileGate 한 번만 우회
-      navigate("/complete", {
+      navigate("/", {
         replace: true,
         state: { profileCompleted: true, bypassProfileGateOnce: true },
       });

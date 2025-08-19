@@ -11,7 +11,6 @@ import MyPage from "../pages/MyPage";
 import ChangePasswordPage from "../pages/ChangePasswordPage";
 import SignupPage from "../pages/SignupPage";
 import ProfileSetupPage from "../pages/ProfileSetupPage";
-import CompletePage from "../pages/CompletePage";  
 import ProfileGate from "./ProfileGate";
 
 function hasToken() {
@@ -94,7 +93,6 @@ export default function AppRoutes({ user, onLogout }) {
       />
 
       <Route path="/profile-setup" element={<ProfileSetupPage />} />
-      <Route path="/complete" element={<CompletePage />} />   {/* ✅ 여기에 추가 */}
 
       {/* 게스트 전용 */}
       <Route
