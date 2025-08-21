@@ -1,7 +1,7 @@
 // src/pages/CategoryPage.js
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams, Link, useLocation } from "react-router-dom";
-import MenuGrid from "../components/MenuGrid";
+import MenuGrid from "../../components/menu/MenuGrid";
 
 export default function CategoryPage() {
   const { categoryId } = useParams();

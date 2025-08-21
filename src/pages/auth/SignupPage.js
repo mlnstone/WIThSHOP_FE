@@ -1,7 +1,7 @@
 // src/pages/SignupPage.js
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { apiFetch } from "../services/api";
+import { apiFetch } from "../../services/api";
 
 const pwRule = /^(?=.*[0-9])(?=.*[a-zA-Z])(?=.*\W)(?!.*\s).{8,15}$/; // 숫자/영문/특수 1개+, 8~15
 const birthRule = /^(?:\d{4}-\d{2}-\d{2}|\d{8})$/;                    // YYYY-MM-DD 또는 YYYYMMDD

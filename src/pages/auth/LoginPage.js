@@ -1,7 +1,7 @@
-// src/pages/LoginPage.jsx
+// src/pages/LoginPage.js
 import React from "react";
 import { useLocation } from "react-router-dom";
-import LoginForm from "../components/LoginForm";
+import LoginForm from "../../components/LoginForm";
 
 export default function LoginPage() {
   const location = useLocation();

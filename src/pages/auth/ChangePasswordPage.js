@@ -1,7 +1,7 @@
-// src/pages/ChangePasswordPage.jsx
+// src/pages/ChangePasswordPage.js
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiFetch } from "../services/api";
+import { apiFetch } from "../../services/api";
 
 export default function ChangePasswordPage() {
     const [currentPw, setCurrentPw] = useState("");

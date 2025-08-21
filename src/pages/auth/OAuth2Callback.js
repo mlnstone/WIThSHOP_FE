@@ -1,7 +1,7 @@
-// src/pages/OAuth2Callback.jsx
+// src/pages/OAuth2Callback.js
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiFetch, authHeaders } from "../services/api";
+import { apiFetch, authHeaders } from "../../services/api";
 
 export default function OAuth2Callback() {
   const navigate = useNavigate();

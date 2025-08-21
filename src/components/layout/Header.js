@@ -1,13 +1,15 @@
-// src/components/layout/Header.jsx
+// src/components/layout/Header.js
 import React, { useEffect, useState } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
-import useUser from "../../hooks/useUser";   // ⬅️ 추가
+import useUser from "../../hooks/useUser";
+import useCartCount from "../../hooks/useCartCount";
 import "./Header.css";
 
 export default function Header({ user, onLogout }) {
   const isLoggedIn = !!user?.name;
   const isAdmin = user?.role === "ADMIN";
   const { needsSetup } = useUser();
+  const cartCount = useCartCount({ enabled: !!localStorage.getItem("accessToken") });
 
   const [categories, setCategories] = useState([]);
   const [boardTypes, setBoardTypes] = useState([]);
@@ -46,7 +48,6 @@ export default function Header({ user, onLogout }) {
     return token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
   };
 
-  // --- 편집 시작/저장/취소/삭제 ---
   const startEdit = (bt) => { setEditingId(bt.boardTypeId); setEditName(bt.boardTypeName ?? bt.name ?? ""); };
   const cancelEdit = () => { setEditingId(null); setEditName(""); };
 
@@ -83,7 +84,6 @@ export default function Header({ user, onLogout }) {
     }
   };
 
-  // --- 추가 ---
   const addType = async () => {
     if (!addName.trim()) return alert("이름을 입력해주세요.");
     try {
@@ -108,6 +108,15 @@ export default function Header({ user, onLogout }) {
       <div className="top-bar">
         <div className="spacer" />
         <div className="auth-buttons">
+          {/* 🛒 장바구니 버튼 + 배지 */}
+          <Link className="link-btn cart-btn" to="/cart" title="장바구니">
+            <span className="cart-emoji" role="img" aria-label="cart">🛒</span>
+            <span className="cart-text">장바구니</span>
+            {cartCount > 0 && (                                  // ← 0이면 렌더 안함
+              <span className="cart-badge" aria-label="count">{cartCount}</span>
+            )}
+          </Link>
+
           {isLoggedIn ? (
             <>
               <span className="hello">
@@ -136,7 +145,6 @@ export default function Header({ user, onLogout }) {
       {/* 네비 */}
       <nav className="nav-bar">
         <ul>
-          {/* 카테고리 */}
           {categories.map((c) => (
             <li key={c.categoryId}>
               <NavLink
@@ -148,7 +156,7 @@ export default function Header({ user, onLogout }) {
               </NavLink>
             </li>
           ))}
-          {/* COMMUNITY 드롭다운 */}
+
           <li className="dropdown">
             <NavLink to="/board" className={({ isActive }) => (isActive ? "active-link" : "")}>
               COMMUNITY
@@ -157,7 +165,7 @@ export default function Header({ user, onLogout }) {
             <ul className="submenu">
               {boardTypes.map((bt) => {
                 const id = bt.boardTypeId;
-                const name = bt.boardTypeName ?? bt.name; // 호환
+                const name = bt.boardTypeName ?? bt.name;
                 const active = isActiveType(id);
 
                 return (
@@ -179,7 +187,6 @@ export default function Header({ user, onLogout }) {
                         <Link to={`/board?typeId=${id}`} className={active ? "active-link" : ""}>
                           {name}
                         </Link>
-
                         {isAdmin && (
                           <button className="icon-btn" title="편집" onClick={() => startEdit(bt)}>
                             ✏️
@@ -213,8 +220,6 @@ export default function Header({ user, onLogout }) {
             </ul>
           </li>
 
-
-          {/* 관리자만 제품등록 */}
           {isAdmin && (
             <li>
               <NavLink to="/upload" className={({ isActive }) => (isActive ? "active-link" : "")}>

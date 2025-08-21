@@ -3,7 +3,7 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "./MainCarousel.css";   // 👈 이 줄 추가
-
+// 홈 배너 설정
 export default function MainCarousel() {
   const settings = {
     dots: true,            // 하단 점 네비게이션

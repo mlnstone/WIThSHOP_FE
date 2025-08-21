@@ -1,0 +1,80 @@
+.mdp-breadcrumb{display:flex;gap:8px;align-items:center;margin-bottom:12px;color:#666}
+.mdp-breadcrumb .text-link{background:none;border:0;color:#666;cursor:pointer;padding:0}
+
+/* 썸네일 없는 그리드 */
+.mdp-grid.no-thumbs{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+@media (max-width:992px){.mdp-grid.no-thumbs{grid-template-columns:1fr}}
+
+/* 메인 이미지 */
+.mdp-main{position:relative;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb}
+.mdp-main img{width:100%;height:520px;object-fit:cover;display:block}
+.mdp-arrow{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:999px;border:none;font-size:28px;background:rgba(255,255,255,.92);cursor:pointer}
+.mdp-arrow.left{left:12px}.mdp-arrow.right{right:12px}
+
+/* 오른쪽 정보 */
+.mdp-info{padding:8px 6px}
+.mdp-rating{display:flex;gap:8px;align-items:center;color:#333;margin-bottom:6px}
+.mdp-rating .star{color:#f59e0b}.mdp-rating .score{font-weight:700}
+.mdp-rating .link{background:none;border:0;color:#2563eb;cursor:pointer;padding:0}
+
+.mdp-title{font-size:28px;font-weight:800;margin:4px 0 12px}
+.mdp-price{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+.mdp-price .discount{color:#e11d48;font-weight:800;font-size:22px}
+.mdp-price .sale{font-size:28px;font-weight:800;color:#111827}
+.mdp-compare{color:#9ca3af;text-decoration:line-through;margin-bottom:16px}
+
+.mdp-meta{margin:12px 0 18px;display:grid;gap:8px}
+.mdp-meta>div{display:grid;grid-template-columns:100px 1fr;gap:8px;color:#444}
+.mdp-meta dt{color:#777}.mdp-meta dd{margin:0}
+.mdp-meta .link{background:none;border:0;color:#2563eb;cursor:pointer;padding:0}
+
+.mdp-controls{display:flex;gap:16px;align-items:center;margin-bottom:14px}
+.mdp-controls .qty{display:flex;gap:10px;align-items:center}
+.mdp-controls .qty input{width:110px;height:36px;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px}
+
+.mdp-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mdp-actions .btn-buy{height:44px;border-radius:10px;border:none;background:#111827;color:#fff;font-weight:700;cursor:pointer}
+.mdp-total{margin-top:12px;color:#555}
+
+.mdp-reviews{margin-top:48px}
+.card {border-radius: 4px !important;}
+  
+.btn {border-radius: 4px !important;}
+
+/* 가벼운 별점 스타일 */
+.star-row {display: inline-flex; align-items: center; gap: 6px; user-select: none;}
+  
+  .star {
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    color: #d0d4db;         /* 비활성 */
+    transition: transform 120ms ease, color 120ms ease;
+    outline: none;
+  }
+  
+  .star.active {
+    color: #f7b500;         /* 활성(노랑) */
+    text-shadow: 0 1px 0 rgba(0,0,0,.1);
+  }
+  
+  .star:focus {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 3px rgba(13,110,253,.25);
+    border-radius: 4px;
+  }
+  
+  .hint-box {
+    background: #f6f7f9;
+    color: #6c757d;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+  }
+.star-icon{--s:18px;display:inline-block;width:var(--s);height:var(--s);background:#f7b500;-webkit-mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23000" d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>') center/contain no-repeat;mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23000" d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>') center/contain no-repeat}
+/* 상단 요약 별 크기 살짝 크게 */
+.mdp-rating .star-icon{--s:20px;margin-right:2px}
+/* 숫자와 나란히 보이게 */
+.rating-pair{display:inline-flex;align-items:center;gap:6px}
+.rating-pair.big .star-icon{--s:22px}
+.rating-num{font-weight:700}

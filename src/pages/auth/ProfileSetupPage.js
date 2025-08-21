@@ -1,8 +1,8 @@
-// src/pages/ProfileSetupPage.jsx
+// src/pages/ProfileSetupPage.js
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { apiFetch } from "../services/api";
-import useUser from "../hooks/useUser";
+import { apiFetch } from "../../services/api";
+import useUser from "../../hooks/useUser";
 
 const birthRule = /^(?:\d{4}-\d{2}-\d{2}|\d{8})$/;
 const phoneRule = /^[0-9\-+]{8,20}$/;

@@ -11,10 +11,10 @@ export default function BoardListPage() {
   const [me, setMe] = useState(null);
 
   // 쿼리
-  const page   = useMemo(() => Number(searchParams.get("page") || 0), [searchParams]); // 0-base
+  const page = useMemo(() => Number(searchParams.get("page") || 0), [searchParams]); // 0-base
   const search = searchParams.get("search") || "";
   const typeId = searchParams.get("typeId") || "";
-  const sort   = (searchParams.get("sort") || "desc").toLowerCase(); // desc(최신순) | asc(오래된순)
+  const sort = (searchParams.get("sort") || "desc").toLowerCase(); // desc(최신순) | asc(오래된순)
 
   // 제목용: 보드 타입 이름
   const [boardTypeName, setBoardTypeName] = useState("게시판");
@@ -160,14 +160,18 @@ export default function BoardListPage() {
       </div>
 
       {/* 검색 */}
-      <form className="d-flex gap-2 mb-3" onSubmit={onSubmitSearch}>
+      <form
+        className="d-flex gap-2 mb-3 justify-content-end"
+        onSubmit={onSubmitSearch}
+      >
         <input
           name="search"
-          className="form-control"
+          className="form-control form-control-sm w-auto"
+          style={{ maxWidth: "200px" }}
           placeholder="검색어"
           defaultValue={search}
         />
-        <button className="btn btn-outline-primary">검색</button>
+        <button className="btn btn-outline-primary btn-sm">검색</button>
       </form>
 
       {/* 목록 */}

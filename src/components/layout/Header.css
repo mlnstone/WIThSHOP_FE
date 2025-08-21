@@ -120,3 +120,29 @@ a { text-decoration: none; color: inherit; }
   text-align: left;
 }
 .add-btn:hover { background: #eef2f6; }
+/* 장바구니 버튼 */
+.cart-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 8px;
+}
+.cart-emoji { font-size: 18px; line-height: 1; }
+.cart-text { font-size: 14px; }
+
+.cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #ff3b30;
+  color: #fff;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  font-weight: 700;
+}

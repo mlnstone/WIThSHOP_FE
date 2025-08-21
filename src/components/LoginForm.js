@@ -1,4 +1,4 @@
-// src/components/LoginForm.jsx
+// src/components/LoginForm.js
 import React, { useState } from "react";
 
 export default function LoginForm() {

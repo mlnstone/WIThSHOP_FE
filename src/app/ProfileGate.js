@@ -1,4 +1,4 @@
-// src/app/ProfileGate.jsx
+// src/app/ProfileGate.js
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useUser from "../hooks/useUser";

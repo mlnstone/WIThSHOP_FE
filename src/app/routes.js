@@ -1,17 +1,19 @@
-// src/app/routes.jsx
+// src/app/routes.js
 import React from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Home from "./Home";
-import LoginPage from "../pages/LoginPage";
-import OAuth2Callback from "../pages/OAuth2Callback";
-import CategoryPage from "../pages/CategoryPage";
-import BoardListPage from "../pages/BoardListPage";
-import BoardDetailPage from "../pages/BoardDetailPage";
-import MyPage from "../pages/MyPage";
-import ChangePasswordPage from "../pages/ChangePasswordPage";
-import SignupPage from "../pages/SignupPage";
-import ProfileSetupPage from "../pages/ProfileSetupPage";
+import LoginPage from "../pages/auth/LoginPage";
+import OAuth2Callback from "../pages/auth/OAuth2Callback";
+import CategoryPage from "../pages/category/CategoryPage";
+import BoardListPage from "../pages/board/BoardListPage";
+import BoardDetailPage from "../pages/board/BoardDetailPage";
+import MyPage from "../pages/auth/MyPage";
+import ChangePasswordPage from "../pages/auth/ChangePasswordPage";
+import SignupPage from "../pages/auth/SignupPage";
+import ProfileSetupPage from "../pages/auth/ProfileSetupPage";
 import ProfileGate from "./ProfileGate";
+import CartPage from "../pages/menu/CartPage";
+import MenuDetailPage from "../pages/menu/MenuDetailPage";
 
 function hasToken() {
   return !!localStorage.getItem("accessToken");
@@ -93,6 +95,7 @@ export default function AppRoutes({ user, onLogout }) {
       />
 
       <Route path="/profile-setup" element={<ProfileSetupPage />} />
+      <Route path="/menus/:menuId" element={<MenuDetailPage />} />
 
       {/* 게스트 전용 */}
       <Route
@@ -111,7 +114,14 @@ export default function AppRoutes({ user, onLogout }) {
           </GuestOnly>
         }
       />
-    
+      <Route path="/cart" element={
+        <AuthOnly>
+          <ProfileGate>
+            <CartPage />
+          </ProfileGate>
+        </AuthOnly>
+      } />
+
       {/* OAuth 콜백 (중복 선언 제거) */}
       <Route path="/oauth2/callback" element={<OAuth2Callback />} />
     </Routes>

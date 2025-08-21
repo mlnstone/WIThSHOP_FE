@@ -1,6 +1,6 @@
-// src/pages/MyPage.jsx
+// src/pages/MyPage.js
 import React, { useEffect, useState } from "react";
-import { apiFetch } from "../services/api";
+import { apiFetch } from "../../services/api";
 import { Link, useLocation } from "react-router-dom";
 
 export default function MyPage() {
