@@ -5,6 +5,8 @@ import AddToCartButton from "../../components/cart/AddToCartButton";
 import InstallmentInfo from "../../components/payment/InstallmentInfo";
 // import ReviewForm from "../../components/review/ReviewForm";
 import "./MenuDetailPage.css";
+import { createOrder } from "../../services/order";
+import { syncCartBadge } from "../../lib/syncCartBadge";
 
 function extractImages(menu) {
   if (Array.isArray(menu?.images) && menu.images.length) return menu.images;
@@ -126,6 +128,24 @@ export default function MenuDetailPage() {
     return () => { alive = false; };
   }, []);
 
+  const onBuyNow = async () => {
+    try {
+      const res = await createOrder([{ menuId: menu.menuId, quantity: qty }]);
+      if (!res.ok) {
+        alert(res.data?.message || "주문 생성 실패");
+        return;
+      }
+      // 장바구니와 별개로 “바로구매”라면 배지 변동은 없겠지만,
+      // 혹시 정책상 장바구니 비우기/동기화 필요하면 여기서 처리
+      await syncCartBadge();
+
+      // 주문 완료 페이지로 이동
+      navigate(`/orders/${res.data.orderCode}`);
+    } catch (e) {
+      alert("네트워크 오류");
+    }
+  };
+
   const price = menu?.salePrice ?? menu?.price ?? 0;
   const compareAt = menu?.originalPrice ?? menu?.listPrice;
   const discount =
@@ -228,7 +248,7 @@ export default function MenuDetailPage() {
 
           <div className="mdp-actions">
             <AddToCartButton menuId={menu.menuId} quantity={qty} />
-            <button className="btn-buy" onClick={() => alert("구매 플로우는 결제 연동 후 구현 예정입니다.")}>
+            <button className="btn-buy" onClick={onBuyNow}>
               구매하기
             </button>
           </div>

@@ -14,6 +14,7 @@ import ProfileSetupPage from "../pages/auth/ProfileSetupPage";
 import ProfileGate from "./ProfileGate";
 import CartPage from "../pages/menu/CartPage";
 import MenuDetailPage from "../pages/menu/MenuDetailPage";
+import OrderDetailPage from "../pages/order/OrderDetailPage";
 
 function hasToken() {
   return !!localStorage.getItem("accessToken");
@@ -46,7 +47,16 @@ export default function AppRoutes({ user, onLogout }) {
           </ProfileGate>
         }
       />
-
+<Route
+        path="/orders/:orderCode"
+        element={
+          <AuthOnly>
+            <ProfileGate>
+              <OrderDetailPage />
+            </ProfileGate>
+          </AuthOnly>
+        }
+      />
       <Route
         path="/board"
         element={
