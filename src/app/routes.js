@@ -14,6 +14,7 @@ import ProfileSetupPage from "../pages/auth/ProfileSetupPage";
 import ProfileGate from "./ProfileGate";
 import CartPage from "../pages/menu/CartPage";
 import MenuDetailPage from "../pages/menu/MenuDetailPage";
+import BenefitsPage from "../pages/checkout/BenefitsPage"; // ✅ 중복 제거
 import OrderDetailPage from "../pages/order/OrderDetailPage";
 
 function hasToken() {
@@ -38,7 +39,6 @@ function GuestOnly({ children }) {
 export default function AppRoutes({ user, onLogout }) {
   return (
     <Routes>
-      {/* 프로필 미설정이면 어디서든 setup으로 보내고 싶은 “일반 페이지들”은 ProfileGate로 감싸기 */}
       <Route
         path="/"
         element={
@@ -47,7 +47,8 @@ export default function AppRoutes({ user, onLogout }) {
           </ProfileGate>
         }
       />
-<Route
+
+      <Route
         path="/orders/:orderCode"
         element={
           <AuthOnly>
@@ -57,6 +58,7 @@ export default function AppRoutes({ user, onLogout }) {
           </AuthOnly>
         }
       />
+
       <Route
         path="/board"
         element={
@@ -73,6 +75,7 @@ export default function AppRoutes({ user, onLogout }) {
           </ProfileGate>
         }
       />
+
       <Route
         path="/category/:categoryId"
         element={
@@ -82,7 +85,7 @@ export default function AppRoutes({ user, onLogout }) {
         }
       />
 
-      {/* 인증 필요 페이지들 */}
+      {/* 인증 필요 */}
       <Route
         path="/me"
         element={
@@ -107,6 +110,18 @@ export default function AppRoutes({ user, onLogout }) {
       <Route path="/profile-setup" element={<ProfileSetupPage />} />
       <Route path="/menus/:menuId" element={<MenuDetailPage />} />
 
+      {/* ✅ 혜택 선택 페이지는 로그인 필요 */}
+      <Route
+        path="/checkout/benefits"
+        element={
+          <AuthOnly>
+            <ProfileGate>
+              <BenefitsPage />
+            </ProfileGate>
+          </AuthOnly>
+        }
+      />
+
       {/* 게스트 전용 */}
       <Route
         path="/login"
@@ -124,15 +139,19 @@ export default function AppRoutes({ user, onLogout }) {
           </GuestOnly>
         }
       />
-      <Route path="/cart" element={
-        <AuthOnly>
-          <ProfileGate>
-            <CartPage />
-          </ProfileGate>
-        </AuthOnly>
-      } />
 
-      {/* OAuth 콜백 (중복 선언 제거) */}
+      <Route
+        path="/cart"
+        element={
+          <AuthOnly>
+            <ProfileGate>
+              <CartPage />
+            </ProfileGate>
+          </AuthOnly>
+        }
+      />
+
+      {/* OAuth 콜백 */}
       <Route path="/oauth2/callback" element={<OAuth2Callback />} />
     </Routes>
   );

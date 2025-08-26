@@ -35,11 +35,11 @@ export default function AddToCartButton({ menuId, quantity = 1, compact = false 
       if (res.ok && res.data?.items) {
         const cnt = res.data.items.reduce((s, it) => s + (it.quantity || 0), 0);
         window.dispatchEvent(new CustomEvent("cart:set", { detail: cnt }));
-        try { localStorage.setItem("__cartCount__", String(cnt)); } catch {}
-        try { new BroadcastChannel("cart").postMessage({ type: "set", count: cnt }); } catch {}
+        try { localStorage.setItem("__cartCount__", String(cnt)); } catch { }
+        try { new BroadcastChannel("cart").postMessage({ type: "set", count: cnt }); } catch { }
       } else {
         window.dispatchEvent(new CustomEvent("cart:bump"));
-        try { new BroadcastChannel("cart").postMessage({ type: "bump" }); } catch {}
+        try { new BroadcastChannel("cart").postMessage({ type: "bump" }); } catch { }
       }
 
       if (!compact) alert("장바구니에 담았습니다 🛒");
@@ -53,9 +53,8 @@ export default function AddToCartButton({ menuId, quantity = 1, compact = false 
       type="button"
       onClick={onClick}
       disabled={loading}
-      className="btn btn-outline-primary"
+      className="btn btn-outline-primary same-style"
       title="장바구니 담기"
-      style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
     >
       <span role="img" aria-label="cart">🛒</span>
       {compact ? (loading ? "..." : "담기") : (loading ? "담는 중..." : "장바구니 담기")}

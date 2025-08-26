@@ -32,8 +32,25 @@
 .mdp-controls .qty{display:flex;gap:10px;align-items:center}
 .mdp-controls .qty input{width:110px;height:36px;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px}
 
-.mdp-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.mdp-actions .btn-buy{height:44px;border-radius:10px;border:none;background:#111827;color:#fff;font-weight:700;cursor:pointer}
+.mdp-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:8px;
+}
+
+/* 두 버튼을 같은 높이/폭으로 */
+
+
+/* 장바구니(좌측) – 부트스트랩 버튼도 키 맞추기 */
+.mdp-actions .btn.btn-outline-primary{
+  display:inline-flex;          /* 아이콘/텍스트 정렬 */
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  font-weight:700;
+  border-width:2px;             /* 존재감 조금 더 */
+}
 .mdp-total{margin-top:12px;color:#555}
 
 .mdp-reviews{margin-top:48px}
@@ -78,3 +95,72 @@
 .rating-pair{display:inline-flex;align-items:center;gap:6px}
 .rating-pair.big .star-icon{--s:22px}
 .rating-num{font-weight:700}
+
+/* ======================
+   구매하기 버튼 스타일
+   ====================== */
+.mdp-actions .btn-buy {
+  --btn-bg: #111827;      /* 기본 배경 */
+  --btn-fg: #fff;         /* 글자색 */
+  --btn-hover: #000;      /* 호버 배경 */
+  --btn-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+
+  height: 48px;
+  border: none;
+  border-radius: 12px;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+
+  box-shadow: var(--btn-shadow);
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+/* hover */
+.mdp-actions .btn-buy:hover {
+  background: var(--btn-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
+}
+
+/* active */
+.mdp-actions .btn-buy:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* focus */
+.mdp-actions .btn-buy:focus {
+  outline: 3px solid rgba(0, 0, 0, 0.15);
+  outline-offset: 2px;
+}
+
+/* disabled */
+.mdp-actions .btn-buy:disabled {
+  background: #bdbdbd;
+  color: #f7f7f7;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+  opacity: 0.85;
+}
+.same-style {
+  height: 56px;         /* 구매하기와 동일한 높이 */
+  border-radius: 12px;  /* 동일한 둥근 모서리 */
+  font-weight: 700;
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+@media (max-width: 480px){
+  .mdp-actions { grid-template-columns: 1fr; }
+}

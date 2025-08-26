@@ -1,86 +1,126 @@
 // src/hooks/useCartCount.js
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
-export default function useCartCount({ enabled = true, refetchOnFocus = true } = {}) {
-  const [count, setCount] = useState(0);
+/** ----- 싱글톤 상태 (모든 컴포넌트 공유) ----- */
+let subscribers = new Set();           // 상태 구독자
+let currentCount = 0;                  // 공유 카운트
+let inFlight = null;                   // 진행 중 fetch Promise
+let lastFetchAt = 0;                   // 마지막 실 fetch 시간
+let listenersInstalled = false;        // 전역 이벤트 리스너 1회만
+let bc = null;                         // BroadcastChannel(옵션)
 
-  // ✅ 레거시와 분리된 새 키/채널/이벤트
-  const LS_KEY = "__cartLineCount__";
-  const CHANNEL = "cartLine";
-  const EVT_SET = "cartLine:set";   // payload 안 씀(무시)
+/** 환경 */
+const BASE = ""; 
+const MIN_INTERVAL = 3000;             // fetch 최소 간격(과도한 폭주 방지)
+const DEBOUNCE = 150;                  // 이벤트 디바운스
 
-  const bc = useMemo(() => {
-    try { return new BroadcastChannel(CHANNEL); } catch { return null; }
-  }, []);
+let debounceTimer = null;
+function scheduleRefresh() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => refresh(true), DEBOUNCE);
+}
 
-  const fetchCartLineCount = useCallback(async () => {
-    const token = localStorage.getItem("accessToken");
-    const headers = token
-      ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "Cache-Control": "no-store" }
-      : { "Content-Type": "application/json", "Cache-Control": "no-store" };
+/** 실제 네트워크 호출(중복 합치기 + 최소 간격) */
+async function fetchCount() {
+  // 진행 중이면 그거 재사용
+  if (inFlight) return inFlight;
 
-    try {
-      // 캐시 바이패스(혹시 프록시 캐시가 있으면 쿼리 스트링 추가)
-      const r = await fetch(`/cart/count?_=${Date.now()}`, { headers, cache: "no-store" });
-      if (!r.ok) return 0;
-      const n = await r.json();
-      return typeof n === "number" && Number.isFinite(n) ? n : 0;
-    } catch {
-      return 0;
-    }
-  }, []);
+  // 너무 촘촘하면 그냥 현재값 반환
+  const now = Date.now();
+  if (now - lastFetchAt < MIN_INTERVAL) return currentCount;
 
-  const refresh = useCallback(async () => {
-    if (!enabled) return;
-    const c = await fetchCartLineCount();
-    setCount(c);
-    try { localStorage.setItem(LS_KEY, String(c)); } catch {}
-    try { bc && bc.postMessage({ type: "set" }); } catch {}
-  }, [enabled, fetchCartLineCount, bc]);
+  lastFetchAt = now;
+  const token = localStorage.getItem("accessToken");
+  const headers = token
+    ? { Authorization: `Bearer ${token}`, "Cache-Control": "no-store" }
+    : { "Cache-Control": "no-store" };
+
+  inFlight = fetch(`${BASE}/cart/count`, { headers, cache: "no-store" })
+    .then(r => (r.ok ? r.json() : 0))
+    .then(n => (Number.isFinite(n) ? n : 0))
+    .catch(() => currentCount)
+    .finally(() => { inFlight = null; });
+
+  return inFlight;
+}
+
+/** 공유 refresh: 구독자에게 브로드캐스트 */
+async function refresh(force = false) {
+  // force=false 이고 너무 촘촘하면 스킵
+  if (!force && Date.now() - lastFetchAt < MIN_INTERVAL) return currentCount;
+
+  const n = await fetchCount();
+  if (n === currentCount) return n;
+  currentCount = n;
+
+  try { localStorage.setItem("__cartLineCount__", String(n)); } catch {}
+  try { bc && bc.postMessage({ type: "set" }); } catch {}
+
+  subscribers.forEach(setter => setter(currentCount));
+  return n;
+}
+
+/** 전역 이벤트 리스너: 탭 복귀/스토리지 변경 시만 디바운스 재조회 */
+function ensureGlobalListeners() {
+  if (listenersInstalled) return;
+  listenersInstalled = true;
+
+  try { bc = new BroadcastChannel("cartLine"); } catch { bc = null; }
+
+  const onFocus = () => scheduleRefresh();
+  const onVis = () => { if (document.visibilityState === "visible") scheduleRefresh(); };
+  const onStorage = (e) => {
+    if (e.key === "__cartLineCount__" || e.key === "__cartCount__") scheduleRefresh();
+  };
+  const onMsg = () => scheduleRefresh();
+
+  window.addEventListener("focus", onFocus);
+  document.addEventListener("visibilitychange", onVis);
+  window.addEventListener("storage", onStorage);
+  bc && bc.addEventListener("message", onMsg);
+
+  // 정리 함수 – 개발 HMR 대비
+  window.__CART_COUNT_CLEANUP__ = () => {
+    window.removeEventListener("focus", onFocus);
+    document.removeEventListener("visibilitychange", onVis);
+    window.removeEventListener("storage", onStorage);
+    bc && bc.removeEventListener("message", onMsg);
+    bc && bc.close();
+    bc = null;
+    listenersInstalled = false;
+  };
+}
+
+/** ----- 공개 훅 ----- */
+export default function useCartCount() {
+  const [count, setCount] = useState(() => {
+    // 초기값: 캐시 → 모듈 공유값
+    const cached = Number(localStorage.getItem("__cartLineCount__"));
+    return Number.isFinite(cached) ? cached : currentCount;
+  });
 
   useEffect(() => {
-    if (!enabled) return;
+    ensureGlobalListeners();
 
-    // 초기 캐시 보여주고 바로 서버값으로 교정
-    try {
-      const cached = Number(localStorage.getItem(LS_KEY));
-      if (!Number.isNaN(cached)) setCount(cached);
-    } catch {}
-    refresh();
+    // 구독 시작
+    subscribers.add(setCount);
 
-    // ❗ 외부 신호는 값 무시 → 항상 재조회만
-    const onSet = () => { refresh(); };
-
-    // 새 이벤트만 수신
-    window.addEventListener(EVT_SET, onSet);
-
-    // 브로드캐스트 채널도 타입만 보고 재조회
-    const onMsg = () => { refresh(); };
-    bc && bc.addEventListener("message", onMsg);
-
-    // 스토리지 변경 → 재조회
-    const onStorage = (ev) => {
-      if (ev.key === LS_KEY || ev.key === "__cartCount__") refresh(); // 레거시 키도 방어
-    };
-    window.addEventListener("storage", onStorage);
-
-    // 화면 복귀 시 재조회
-    const onFocus = () => refetchOnFocus && refresh();
-    window.addEventListener("focus", onFocus);
-    const onVisible = () => {
-      if (refetchOnFocus && document.visibilityState === "visible") refresh();
-    };
-    document.addEventListener("visibilitychange", onVisible);
+    // 첫 렌더에서 실제값으로 동기화(중복 요청은 자동 합쳐짐)
+    refresh(true);
 
     return () => {
-      window.removeEventListener(EVT_SET, onSet);
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onVisible);
-      bc && bc.removeEventListener("message", onMsg);
-      bc && bc.close();
+      subscribers.delete(setCount);
+      if (subscribers.size === 0 && window.__CART_COUNT_CLEANUP__) {
+        // 필요 시 전역 리스너 정리 (선택)
+        // window.__CART_COUNT_CLEANUP__();
+      }
     };
-  }, [enabled, refetchOnFocus, bc, refresh]);
+  }, []);
 
   return count;
+}
+
+/** 외부(장바구니 추가/삭제 등)에서 호출해 갱신하고 싶으면 이 함수 임포트해서 호출 */
+export async function syncCartBadge() {
+  return refresh(true);
 }
