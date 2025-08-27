@@ -82,6 +82,7 @@ export async function onBuyNow(menu, qty, options = {}) {
 
     // 1) 사전검증
     let merchant_uid, amount;
+    let prep = null;
 
     if (prepareByItems) {
       // ✅ 쿠폰/포인트/배송비 포함 사전검증
@@ -108,7 +109,7 @@ export async function onBuyNow(menu, qty, options = {}) {
         return false;
       }
 
-      const prep = await prepRes.json(); // { merchant_uid, amount, subtotal, discountCoupon, discountPoints, shippingFee }
+      prep = await prepRes.json();
       merchant_uid = prep.merchant_uid;
       amount = prep.amount;
     } else {
@@ -192,8 +193,17 @@ export async function onBuyNow(menu, qty, options = {}) {
       const orderItems = prepareByItems
         ? (Array.isArray(items) && items.length ? items : [{ menuId: menu.menuId, quantity: qty }])
         : [{ menuId: menu.menuId, quantity: qty }];
+      const extras = prepareByItems && prep
+        ? {
+          merchantUid: merchant_uid,               // 선택(백엔드에서 쓸 계획 있으면)
+          discountCoupon: prep.discountCoupon ?? 0,
+          discountPoints: prep.discountPoints ?? 0,
+          shippingFee: prep.shippingFee ?? 0,
+          userCouponId: userCouponId || null,
+        }
+        : {};
+      const res = await createOrder(orderItems, extras);
 
-      const res = await createOrder(orderItems);
       if (!res?.ok) {
         alert(res?.data?.message || "주문 생성 실패");
         return false;
