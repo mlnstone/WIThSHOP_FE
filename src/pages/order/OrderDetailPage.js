@@ -16,15 +16,15 @@ export default function OrderDetailPage() {
 
   // 상태 배지 색상
   // 상태 배지 색상
-const statusClass = useMemo(() => {
+  const statusClass = useMemo(() => {
     switch (order?.orderStatus) {
       case "REQUESTED": return "badge bg-secondary";      // 주문 요청
-      case "APPROVED":  return "badge bg-primary";        // 승인됨
-      case "REJECTED":  return "badge bg-warning text-dark"; // 거절됨
-      case "SHIPPED":   return "badge bg-info";           // 배송 중
+      case "APPROVED": return "badge bg-primary";        // 승인됨
+      case "REJECTED": return "badge bg-warning text-dark"; // 거절됨
+      case "SHIPPED": return "badge bg-info";           // 배송 중
       case "DELIVERED": return "badge bg-success";        // 배송 완료
-      case "CANCELED":  return "badge bg-dark";           // 취소됨
-      default:          return "badge bg-light text-dark";
+      case "CANCELED": return "badge bg-dark";           // 취소됨
+      default: return "badge bg-light text-dark";
     }
   }, [order]);
 
@@ -55,6 +55,23 @@ const statusClass = useMemo(() => {
     if (!order) return;
     if (!window.confirm("이 주문을 취소하시겠습니까?")) return;
     try {
+      // 1) PG 환불 (전액)
+      const rRefund = await fetch(`/api/payments/refund`, {
+        method: "POST",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({
+          impUid: order.impUid,      // ❗주문 응답에 impUid가 포함되어야 함
+          orderCode: order.orderCode,
+          reason: "고객 요청 취소",
+        }),
+      });
+      const jr = await rRefund.json().catch(() => null);
+      if (!rRefund.ok) {
+        alert(jr?.message || "환불에 실패했습니다.");
+        return;
+      }
+
+      // 2) 주문 상태 취소 (재고 롤백)
       const r = await fetch(`/orders/${order.orderId}/cancel`, {
         method: "PUT",
         headers: authHeaders(),
@@ -66,7 +83,7 @@ const statusClass = useMemo(() => {
       }
       // 성공 시 화면 상태 갱신
       setOrder(j);
-      alert("주문이 취소되었습니다.");
+      alert("환불 및 주문 취소가 완료되었습니다.");
     } catch {
       alert("네트워크 오류");
     }
@@ -96,7 +113,7 @@ const statusClass = useMemo(() => {
         <div className="card-body">
           <div className="d-flex flex-wrap gap-3">
             <div><span className="text-muted">주문코드</span><div className="fw-semibold">{order.orderCode}</div></div>
-            <div><span className="text-muted">주문일시</span><div className="fw-semibold">{order.orderCreatedAt?.replace("T"," ").slice(0,19)}</div></div>
+            <div><span className="text-muted">주문일시</span><div className="fw-semibold">{order.orderCreatedAt?.replace("T", " ").slice(0, 19)}</div></div>
             <div><span className="text-muted">주문금액</span><div className="fw-semibold">{toWon(order.orderPrice)}</div></div>
             <div><span className="text-muted">상태</span><div className={statusClass} style={{ fontSize: 12 }}>{order.orderStatus}</div></div>
           </div>
@@ -110,11 +127,11 @@ const statusClass = useMemo(() => {
             <table className="table mb-0 align-middle">
               <thead>
                 <tr>
-                  <th style={{width: 60}}>#</th>
+                  <th style={{ width: 60 }}>#</th>
                   <th>상품명</th>
-                  <th style={{width: 140}} className="text-end">단가</th>
-                  <th style={{width: 100}} className="text-end">수량</th>
-                  <th style={{width: 160}} className="text-end">소계</th>
+                  <th style={{ width: 140 }} className="text-end">단가</th>
+                  <th style={{ width: 100 }} className="text-end">수량</th>
+                  <th style={{ width: 160 }} className="text-end">소계</th>
                 </tr>
               </thead>
               <tbody>
@@ -144,7 +161,7 @@ const statusClass = useMemo(() => {
 
       <div className="d-flex gap-2">
         <button className="btn btn-outline-secondary" onClick={() => navigate("/")}>홈으로</button>
-        {["REQUESTED","APPROVED","REJECTED"].includes(order.orderStatus) && (
+        {["REQUESTED", "APPROVED", "REJECTED"].includes(order.orderStatus) && (
           <button className="btn btn-danger ms-auto" onClick={onCancel}>주문 취소</button>
         )}
       </div>
