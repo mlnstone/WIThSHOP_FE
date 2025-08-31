@@ -1,23 +1,26 @@
 // src/components/cart/AddToCartButton.js
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // ★ useLocation 추가
 import useUser from "../../hooks/useUser";
 import { addCartItem, fetchMyCart } from "../../services/cart";
 
 export default function AddToCartButton({ menuId, quantity = 1, compact = false }) {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation(); // ★ 현재 경로 가져오기
   const { needsSetup, accessToken } = useUser();
 
   const onClick = async () => {
     if (!accessToken) {
       alert("로그인이 필요합니다.");
-      navigate("/login");
+      // ★ 현재 페이지를 from으로 넘김
+      navigate("/login", { replace: true, state: { from: location } });
       return;
     }
     if (needsSetup) {
       alert("프로필 설정이 필요합니다.");
-      navigate("/profile-setup");
+      // ★ 프로필 설정 완료 후 돌아오고 싶으면 동일하게 넘길 수 있음
+      navigate("/profile-setup", { replace: true, state: { from: location } });
       return;
     }
 
@@ -30,16 +33,16 @@ export default function AddToCartButton({ menuId, quantity = 1, compact = false 
         return;
       }
 
-      // 담기 성공 → 서버로부터 총 수량 재계산 후 전파
+      // 담기 성공 → 수량 브로드캐스트
       const res = await fetchMyCart();
       if (res.ok && res.data?.items) {
         const cnt = res.data.items.reduce((s, it) => s + (it.quantity || 0), 0);
         window.dispatchEvent(new CustomEvent("cart:set", { detail: cnt }));
-        try { localStorage.setItem("__cartCount__", String(cnt)); } catch { }
-        try { new BroadcastChannel("cart").postMessage({ type: "set", count: cnt }); } catch { }
+        try { localStorage.setItem("__cartCount__", String(cnt)); } catch {}
+        try { new BroadcastChannel("cart").postMessage({ type: "set", count: cnt }); } catch {}
       } else {
         window.dispatchEvent(new CustomEvent("cart:bump"));
-        try { new BroadcastChannel("cart").postMessage({ type: "bump" }); } catch { }
+        try { new BroadcastChannel("cart").postMessage({ type: "bump" }); } catch {}
       }
 
       if (!compact) alert("장바구니에 담았습니다 🛒");

@@ -1,0 +1,129 @@
+/* 컨테이너 */
+.login-sheet {
+    width: 360px;
+    margin: 40px auto 0;
+  }
+  
+  /* 제목 */
+  .login-title {
+    text-align: left;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+  
+  /* 레이블 */
+  .login-label {
+    display: block;
+    font-size: 14px;
+    color: #111;
+    margin-bottom: 6px;
+  }
+  
+  /* 라인 인풋 (밑줄만) */
+  .line-input {
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    padding: 6px 0;
+  }
+  .line-input input {
+    border: none;
+    outline: none;
+    flex: 1;
+    font-size: 15px;
+    padding: 6px 0;
+  }
+  .line-input:focus-within {
+    border-bottom-color: #111;
+  }
+  
+  /* 우측 아이콘 */
+  .with-icon {
+    position: relative;
+  }
+  .ghost-icon {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 0 4px;
+  }
+  
+  /* 로그인 버튼 (비활성 시 회색) */
+  .login-main-btn {
+    width: 100%;
+    height: 48px;
+    margin-top: 16px;
+    background: #111;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+  }
+  .login-main-btn.disabled {
+    background: #dedede;
+    color: #9aa0a6;
+    cursor: not-allowed;
+  }
+  
+  /* 하단 링크 구분 */
+  .login-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin: 14px 0 18px;
+    color: #6b7280;
+    font-size: 13px;
+  }
+  .login-links a,
+  .login-links .link-btn {
+    color: #111;
+    text-decoration: none;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  .login-links .divider {
+    width: 1px;
+    height: 14px;
+    background: #e5e7eb;
+  }
+  
+  /* 구글 로그인 버튼 (표준 다크) */
+  .google-btn {
+    display: block;
+    width: 100%;
+    height: 48px;
+    background: #111;         /* Google 표준 다크 */
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    text-align: center;
+    line-height: 48px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .google-btn:hover {
+    filter: brightness(0.95);
+  }
+  
+  .mt-3 { margin-top: 12px; }
+
+/* Chrome / Safari 자동완성 파란 배경 제거 */
+.line-input input:-webkit-autofill,
+.line-input input:-webkit-autofill:hover,
+.line-input input:-webkit-autofill:focus,
+.line-input input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0px 1000px #fff inset !important; /* 배경을 흰색으로 채움 */
+  -webkit-text-fill-color: #111 !important;                  /* 글자색 유지 */
+  transition: background-color 9999s ease-out 0s;            /* 깜빡임 방지 트릭 */
+}
+
+/* 기본 배경은 투명하게 */
+.line-input input {
+  background-color: transparent;
+}

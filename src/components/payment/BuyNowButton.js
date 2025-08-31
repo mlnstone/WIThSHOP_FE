@@ -11,7 +11,7 @@ export default function BuyNowButton({ menuId, quantity = 1 }) {
   const onClick = async () => {
     if (!accessToken) {
       alert("로그인이 필요합니다.");
-      navigate("/login");
+      navigate("/login", { state: { from: `/checkout/benefits?menuId=${menuId}&qty=${quantity}` } });
       return;
     }
     if (needsSetup) {
