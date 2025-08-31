@@ -14,7 +14,7 @@ import ProfileSetupPage from "../pages/auth/ProfileSetupPage";
 import ProfileGate from "./ProfileGate";
 import CartPage from "../pages/menu/CartPage";
 import MenuDetailPage from "../pages/menu/MenuDetailPage";
-import BenefitsPage from "../pages/checkout/BenefitsPage"; // ✅ 중복 제거
+import BenefitsPage from "../pages/checkout/BenefitsPage";
 import OrderDetailPage from "../pages/order/OrderDetailPage";
 
 function hasToken() {

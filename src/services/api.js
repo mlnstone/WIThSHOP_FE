@@ -1,4 +1,6 @@
 // src/services/api.js
+import { signOut } from "./auth";
+
 export const BACKEND = process.env.REACT_APP_BACKEND ?? "http://localhost:8887";
 
 let isRefreshing = false;
@@ -22,7 +24,7 @@ async function refreshAccessToken() {
 
     if (!res.ok) throw new Error(`refresh failed: ${res.status}`);
 
-    const data = await res.json(); // {grantType, accessToken, refreshToken}
+    const data = await res.json(); // { grantType, accessToken, refreshToken }
 
     if (data?.accessToken) {
       localStorage.setItem("accessToken", data.accessToken);
@@ -31,16 +33,12 @@ async function refreshAccessToken() {
       localStorage.setItem("refreshToken", data.refreshToken);
     }
 
-    refreshWaiters.forEach(w => w.resolve(true));
+    refreshWaiters.forEach((w) => w.resolve(true));
     refreshWaiters = [];
     return true;
   } catch (e) {
-    refreshWaiters.forEach(w => w.reject(e));
+    refreshWaiters.forEach((w) => w.reject(e));
     refreshWaiters = [];
-
-    // 실패 시 토큰 제거
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
     return false;
   } finally {
     isRefreshing = false;
@@ -52,11 +50,14 @@ export async function apiFetch(path, options = {}, _triedOnce = false) {
   const url = path.startsWith("http") ? path : `${BACKEND}${path}`;
 
   const res = await fetch(url, {
-    headers: { Accept: "application/json, text/plain;q=0.9,*/*;q=0.8", ...headers },
+    headers: {
+      Accept: "application/json, text/plain;q=0.9,*/*;q=0.8",
+      ...headers,
+    },
     ...rest,
   });
 
-  // 401/403 → 1회에 한해 리프레시 → 원요청 재시도
+  // 401/403 → 1회에 한해 리프레시 → 원 요청 재시도
   if ((res.status === 401 || res.status === 403) && !_triedOnce) {
     const ok = await refreshAccessToken();
     if (ok) {
@@ -66,7 +67,7 @@ export async function apiFetch(path, options = {}, _triedOnce = false) {
       return apiFetch(path, { ...options, headers: retryHeaders }, true);
     } else {
       const from = encodeURIComponent(window.location.pathname + window.location.search);
-      window.location.replace(`/login?from=${from}`);
+      signOut(`/login?from=${from}`);
       return { ok: false, status: res.status, data: null };
     }
   }

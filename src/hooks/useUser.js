@@ -2,17 +2,30 @@
 import { useEffect, useState } from "react";
 import { decodeJwt } from "../lib/jwt";
 import { apiFetch } from "../services/api";
+import { signOut } from "../services/auth";
 
 const isEmail = (s) => /\S+@\S+\.\S+/.test(s || "");
 const localPart = (s) => (s && s.includes("@") ? s.split("@")[0] : s || "");
 
 const pickNameFromToken = (p = {}) =>
-  // 토큰에 name 없으면 email, 그것도 없으면 sub(이메일일 수도 있음)
-  p.name || p.user_name || p.preferred_username || p.nickname ||
-  p.given_name || p.username || p.email || p.sub || "";
+  p.name ||
+  p.user_name ||
+  p.preferred_username ||
+  p.nickname ||
+  p.given_name ||
+  p.username ||
+  p.email ||
+  p.sub ||
+  "";
 
 const pickNameFromApi = (d = {}) =>
-  d.userName || d.user_name || d.name || d.username || d.userEmail || d.email || "";
+  d.userName ||
+  d.user_name ||
+  d.name ||
+  d.username ||
+  d.userEmail ||
+  d.email ||
+  "";
 
 // 🔹 로컬 캐시 읽기
 const getCachedName = () => localStorage.getItem("displayName") || "";
@@ -23,12 +36,13 @@ export default function useUser() {
   const claims = token ? decodeJwt(token) || {} : {};
   const tokenNameRaw = pickNameFromToken(claims);
   const tokenName = tokenNameRaw
-    ? (isEmail(tokenNameRaw) ? localPart(tokenNameRaw) : tokenNameRaw)
-    : ""; // 토큰에 이름이 없으면 빈값
+    ? isEmail(tokenNameRaw)
+      ? localPart(tokenNameRaw)
+      : tokenNameRaw
+    : "";
   const cachedName = getCachedName();
 
   const [user, setUser] = useState({
-    // 캐시 > 토큰 이름 순으로 초기 표시 (즉시 렌더)
     name: cachedName || tokenName,
     role: (claims.role || claims.auth || "").replace("ROLE_", ""),
   });
@@ -39,7 +53,7 @@ export default function useUser() {
   useEffect(() => {
     if (!token) return;
 
-    const fallbackName = user.name; // 로컬 snapshot
+    const fallbackName = user.name;
 
     const controller = new AbortController();
     apiFetch("/api/me", {
@@ -65,18 +79,13 @@ export default function useUser() {
       .finally(() => setHydrated(true));
 
     return () => controller.abort();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const needsSetup =
     !!token && !!me && (!me.userName && !me.birth && !me.gender && !me.phone);
 
-  const logout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("displayName"); // 캐시도 정리(선택)
-    window.location.reload();
-  };
+  const logout = () => signOut();
 
   const refreshMe = async () => {
     if (!token) return null;
@@ -102,5 +111,4 @@ export default function useUser() {
   };
 
   return { user, me, needsSetup, hydrated, logout, accessToken: token, refreshMe };
-
 }
