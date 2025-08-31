@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Table, Button, Modal, Form } from "react-bootstrap";
-
-const BACKEND = "http://localhost:8887"; // API 주소
+import { apiFetch, authHeaders } from "../../services/api"; 
 
 export default function CategoryAdmin() {
   const [categories, setCategories] = useState([]);

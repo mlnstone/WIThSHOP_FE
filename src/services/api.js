@@ -1,7 +1,7 @@
 // src/services/api.js
 import { signOut } from "./auth";
 
-export const BACKEND = process.env.REACT_APP_BACKEND ?? "http://localhost:8887";
+export const BACKEND = process.env.REACT_APP_BACKEND ?? "";
 
 let isRefreshing = false;
 let refreshWaiters = [];

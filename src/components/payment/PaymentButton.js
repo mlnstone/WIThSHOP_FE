@@ -1,8 +1,8 @@
 // // src/components/PaymentButton.jsx
 // import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-// // 환경변수 예시: REACT_APP_BACKEND=http://localhost:8887
-// const BACKEND = process.env.REACT_APP_BACKEND ?? "http://localhost:8887";
+
+// const BACKEND = process.env.REACT_APP_BACKEND ?? "";
 // const { merchant_uid, amount } = prepData;
 // // 포트원 스크립트 로더 (한 번만 로드)
 // function useIamport(scriptUrl = "https://cdn.iamport.kr/v1/iamport.js") {
