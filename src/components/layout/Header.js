@@ -1,4 +1,3 @@
-// src/components/layout/Header.js
 import React, { useEffect, useState } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import useUser from "../../hooks/useUser";
@@ -6,6 +5,10 @@ import useCartCount from "../../hooks/useCartCount";
 import "./Header.css";
 
 export default function Header({ user, onLogout }) {
+  const location = useLocation();
+  const HIDE_PATHS = ["/login", "/signup"];
+  const shouldHide = HIDE_PATHS.some((p) => location.pathname.startsWith(p));
+
   const isLoggedIn = !!user?.name;
   const isAdmin = user?.role === "ADMIN";
   const { needsSetup } = useUser();
@@ -17,8 +20,6 @@ export default function Header({ user, onLogout }) {
   const [editName, setEditName] = useState("");
   const [adding, setAdding] = useState(false);
   const [addName, setAddName] = useState("");
-
-  const location = useLocation();
 
   useEffect(() => {
     fetch("/categories")
@@ -45,11 +46,19 @@ export default function Header({ user, onLogout }) {
 
   const authHeaders = () => {
     const token = localStorage.getItem("accessToken");
-    return token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
+    return token
+      ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
+      : { "Content-Type": "application/json" };
   };
 
-  const startEdit = (bt) => { setEditingId(bt.boardTypeId); setEditName(bt.boardTypeName ?? bt.name ?? ""); };
-  const cancelEdit = () => { setEditingId(null); setEditName(""); };
+  const startEdit = (bt) => {
+    setEditingId(bt.boardTypeId);
+    setEditName(bt.boardTypeName ?? bt.name ?? "");
+  };
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditName("");
+  };
 
   const saveEdit = async (id) => {
     if (!editName.trim()) return alert("이름을 입력해주세요.");
@@ -102,25 +111,24 @@ export default function Header({ user, onLogout }) {
     }
   };
 
+  if (shouldHide) return null;
+
   return (
     <header className="header">
       {/* 상단바 */}
       <div className="top-bar">
         <div className="spacer" />
         <div className="auth-buttons">
-          {/* 🛒 장바구니 버튼 + 배지 */}
           <Link className="link-btn cart-btn" to="/cart" title="장바구니">
             <span className="cart-emoji" role="img" aria-label="cart">🛒</span>
             <span className="cart-text">장바구니</span>
-            {cartCount > 0 && (                                  // ← 0이면 렌더 안함
-              <span className="cart-badge" aria-label="count">{cartCount}</span>
-            )}
+            {cartCount > 0 && <span className="cart-badge" aria-label="count">{cartCount}</span>}
           </Link>
 
           {isLoggedIn ? (
             <>
               <span className="hello">
-                안녕하세요, <strong>{user.name}</strong>
+                <strong>{user.name}</strong>
                 {isAdmin && <span className="badge">관리자</span>} 님
               </span>
               <Link className="link-btn" to={needsSetup ? "/profile-setup" : "/me"}>
@@ -144,90 +152,92 @@ export default function Header({ user, onLogout }) {
 
       {/* 네비 */}
       <nav className="nav-bar">
-        <ul>
-          {categories.map((c) => (
-            <li key={c.categoryId}>
-              <NavLink
-                to={`/category/${c.categoryId}`}
-                state={{ categoryName: c.categoryName }}
-                className={({ isActive }) => (isActive ? "active-link" : "")}
-              >
-                {c.categoryName}
+        <div className="nav-scroll">
+          <ul className="nav-list">
+            {categories.map((c) => (
+              <li key={c.categoryId}>
+                <NavLink
+                  to={`/category/${c.categoryId}`}
+                  state={{ categoryName: c.categoryName }}
+                  className={({ isActive }) => (isActive ? "active-link" : "")}
+                >
+                  {c.categoryName}
+                </NavLink>
+              </li>
+            ))}
+
+            <li className="dropdown">
+              <NavLink to="/board" className={({ isActive }) => (isActive ? "active-link" : "")}>
+                COMMUNITY
               </NavLink>
-            </li>
-          ))}
 
-          <li className="dropdown">
-            <NavLink to="/board" className={({ isActive }) => (isActive ? "active-link" : "")}>
-              COMMUNITY
-            </NavLink>
+              <ul className="submenu">
+                {boardTypes.map((bt) => {
+                  const id = bt.boardTypeId;
+                  const name = bt.boardTypeName ?? bt.name;
+                  const active = isActiveType(id);
 
-            <ul className="submenu">
-              {boardTypes.map((bt) => {
-                const id = bt.boardTypeId;
-                const name = bt.boardTypeName ?? bt.name;
-                const active = isActiveType(id);
+                  return (
+                    <li key={id} className="submenu-row">
+                      {editingId === id ? (
+                        <div className="inline-edit">
+                          <input
+                            className="inline-input"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            autoFocus
+                          />
+                          <button className="btn-xs primary" onClick={() => saveEdit(id)}>저장</button>
+                          <button className="btn-xs" onClick={cancelEdit}>취소</button>
+                          <button className="btn-xs danger" onClick={() => deleteType(id)}>삭제</button>
+                        </div>
+                      ) : (
+                        <div className="submenu-item">
+                          <Link to={`/board?typeId=${id}`} className={active ? "active-link" : ""}>
+                            {name}
+                          </Link>
+                          {isAdmin && (
+                            <button className="icon-btn" title="편집" onClick={() => startEdit(bt)}>
+                              ✏️
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
 
-                return (
-                  <li key={id} className="submenu-row">
-                    {editingId === id ? (
+                {isAdmin && (
+                  <li className="submenu-row add-row">
+                    {adding ? (
                       <div className="inline-edit">
                         <input
                           className="inline-input"
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
+                          placeholder="새 게시판 이름"
+                          value={addName}
+                          onChange={(e) => setAddName(e.target.value)}
                           autoFocus
                         />
-                        <button className="btn-xs primary" onClick={() => saveEdit(id)}>저장</button>
-                        <button className="btn-xs" onClick={cancelEdit}>취소</button>
-                        <button className="btn-xs danger" onClick={() => deleteType(id)}>삭제</button>
+                        <button className="btn-xs primary" onClick={addType}>추가</button>
+                        <button className="btn-xs" onClick={() => { setAdding(false); setAddName(""); }}>취소</button>
                       </div>
                     ) : (
-                      <div className="submenu-item">
-                        <Link to={`/board?typeId=${id}`} className={active ? "active-link" : ""}>
-                          {name}
-                        </Link>
-                        {isAdmin && (
-                          <button className="icon-btn" title="편집" onClick={() => startEdit(bt)}>
-                            ✏️
-                          </button>
-                        )}
-                      </div>
+                      <button className="add-btn" onClick={() => setAdding(true)}>+ 타입 추가</button>
                     )}
                   </li>
-                );
-              })}
-
-              {isAdmin && (
-                <li className="submenu-row add-row">
-                  {adding ? (
-                    <div className="inline-edit">
-                      <input
-                        className="inline-input"
-                        placeholder="새 게시판 이름"
-                        value={addName}
-                        onChange={(e) => setAddName(e.target.value)}
-                        autoFocus
-                      />
-                      <button className="btn-xs primary" onClick={addType}>추가</button>
-                      <button className="btn-xs" onClick={() => { setAdding(false); setAddName(""); }}>취소</button>
-                    </div>
-                  ) : (
-                    <button className="add-btn" onClick={() => setAdding(true)}>+ 타입 추가</button>
-                  )}
-                </li>
-              )}
-            </ul>
-          </li>
-
-          {isAdmin && (
-            <li>
-              <NavLink to="/upload" className={({ isActive }) => (isActive ? "active-link" : "")}>
-                제품등록
-              </NavLink>
+                )}
+              </ul>
             </li>
-          )}
-        </ul>
+
+            {isAdmin && (
+              <li>
+                <NavLink to="/upload" className={({ isActive }) => (isActive ? "active-link" : "")}>
+                  제품등록
+                </NavLink>
+              </li>
+            )}
+          </ul>
+        </div>
       </nav>
     </header>
   );

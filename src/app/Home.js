@@ -5,8 +5,7 @@ import MainCarousel from "../components/main/MainCarousel";
 import HomeWelcomeCard from "../components/main/HomeWelcomeCard";
 
 export default function Home({ user, onLogout }) {
-  console.log("✅ Home props:", { user, onLogout });
-  console.log('REACT_APP_BACKEND', process.env.REACT_APP_BACKEND);
+  
   return (
     <>
       <div className="container-fluid p-0" style={{ marginBottom: "2rem" }}>

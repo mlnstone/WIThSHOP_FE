@@ -43,7 +43,7 @@ export default function SignupPage() {
     setForm((f) => ({ ...f, [name]: value }));
     setFieldErrors((fe) => {
       const next = { ...fe, [name]: "" };
-  
+
       // 이메일 형식 즉시 체크
       if (name === "email") {
         if (value && !emailRule.test(value)) next.email = "올바른 이메일 형식이 아닙니다.";
@@ -51,7 +51,7 @@ export default function SignupPage() {
         setEmailChecked(false);
         setEmailAvailable(false);
       }
-  
+
       // 비밀번호 즉시 체크 (규칙만 확인)
       if (name === "password") {
         if (value && !pwRule.test(value)) {
@@ -66,7 +66,7 @@ export default function SignupPage() {
           next.confirmPassword = "";
         }
       }
-  
+
       // 비밀번호 확인 즉시 체크
       if (name === "confirmPassword") {
         if (value && value !== form.password) {
@@ -75,7 +75,7 @@ export default function SignupPage() {
           next.confirmPassword = "";
         }
       }
-  
+
       return next;
     });
     setError("");
@@ -183,7 +183,9 @@ export default function SignupPage() {
 
   return (
     <div className="signup-sheet">
-      <h3 className="signup-title">회원가입</h3>
+      <div className="login-header">
+        <Link to="/" className="logo-btn">WIThSHOP</Link>
+      </div>
 
       {error && <div className="signup-alert">{error}</div>}
 
@@ -255,18 +257,18 @@ export default function SignupPage() {
 
         {/* 생년월일 */}
         <label className="signup-label mt-3">생년월일</label>
-<div className={`line-input ${fieldErrors.birth ? "is-error" : ""}`}>
-  <input
-    name="birth"
-    type="date"
-    value={form.birth}
-    onChange={onChange}
-    required
-    min={minBirth}
-    max={today}
-  />
-</div>
-{fieldErrors.birth && <div className="field-error">{fieldErrors.birth}</div>}
+        <div className={`line-input ${fieldErrors.birth ? "is-error" : ""}`}>
+          <input
+            name="birth"
+            type="date"
+            value={form.birth}
+            onChange={onChange}
+            required
+            min={minBirth}
+            max={today}
+          />
+        </div>
+        {fieldErrors.birth && <div className="field-error">{fieldErrors.birth}</div>}
 
         {/* 전화번호 */}
         <label className="signup-label mt-3">전화번호</label>
@@ -294,8 +296,6 @@ export default function SignupPage() {
             />
             <span>남성</span>
           </label>
-        </div>
-        <div className="gender-row">
           <label className="radio">
             <input
               type="radio"

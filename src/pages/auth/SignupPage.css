@@ -2,85 +2,86 @@
 .signup-sheet {
     width: 360px;
     margin: 40px auto 80px;
-}
-
-/* 제목 */
-.signup-title {
+  }
+  
+  /* 제목 */
+  .signup-title {
     text-align: left;
     font-size: 20px;
     font-weight: 700;
     margin-bottom: 16px;
-}
-
-/* 전체 폼 래퍼 */
-.signup-form {
+  }
+  
+  /* 전체 폼 래퍼 */
+  .signup-form {
     display: block;
-}
-
-/* 레이블 */
-.signup-label {
+  }
+  
+  /* 레이블 */
+  .signup-label {
     display: block;
     font-size: 14px;
     color: #111;
     margin-bottom: 6px;
-}
-
-/* 라인 인풋 (밑줄만) */
-.line-input {
-    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  /* 라인 인풋 (밑줄 한 줄만: 래퍼에만) */
+  .line-input {
     display: flex;
     align-items: center;
     padding: 6px 0;
-}
-
-.line-input input {
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  /* input에는 밑줄/테두리 주지 않음 */
+  .line-input input {
     border: none;
     outline: none;
     flex: 1;
     font-size: 15px;
     padding: 6px 0;
     background-color: transparent;
-}
-
-.line-input:focus-within {
-    border-bottom-color: #111;
-}
-
-.line-input.is-error {
-    border-bottom-color: #e11d48;
-    /* red-600 */
-}
-
-/* 필드 에러 텍스트 */
-.field-error {
+  }
+  
+  /* 포커스돼도 밑줄 색 유지 (검게 변하지 않게) */
+  .line-input:focus-within {
+    border-bottom-color: #e5e7eb;
+  }
+  
+  /* 에러일 때만 빨간 밑줄 */
+  .line-input.is-error {
+    border-bottom-color: #e11d48; /* red-600 */
+  }
+  
+  /* 필드 에러 텍스트 */
+  .field-error {
     color: #e11d48;
     font-size: 12px;
     margin-top: 6px;
-}
-
-/* 성별 라디오 */
-.gender-row {
+  }
+  
+  /* 성별 라디오 (한 줄 밑줄) */
+  .gender-row {
     display: flex;
     gap: 16px;
     padding: 6px 0 2px;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.radio {
+  }
+  
+  .radio {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     font-size: 14px;
-}
-
-/* 버튼들 */
-.btn-row {
+  }
+  
+  /* 버튼들 */
+  .btn-row {
     display: flex;
     gap: 8px;
     margin-top: 18px;
-}
-
-.primary-btn {
+  }
+  
+  .primary-btn {
     flex: 1;
     height: 44px;
     background: #111;
@@ -89,15 +90,15 @@
     border-radius: 8px;
     font-weight: 700;
     cursor: pointer;
-}
-
-.primary-btn:disabled {
+  }
+  
+  .primary-btn:disabled {
     background: #dedede;
     color: #9aa0a6;
     cursor: not-allowed;
-}
-
-.ghost-btn {
+  }
+  
+  .ghost-btn {
     height: 44px;
     padding: 0 14px;
     display: inline-flex;
@@ -107,10 +108,10 @@
     color: #111;
     text-decoration: none;
     font-weight: 600;
-}
-
-/* 상단 에러 알럿 */
-.signup-alert {
+  }
+  
+  /* 상단 에러 알럿 */
+  .signup-alert {
     background: #fee2e2;
     border: 1px solid #fecaca;
     color: #991b1b;
@@ -118,45 +119,41 @@
     border-radius: 8px;
     font-size: 14px;
     margin-bottom: 12px;
-}
-
-/* 보조 유틸 */
-.mt-3 {
+  }
+  
+  /* 보조 유틸 */
+  .mt-3 {
     margin-top: 12px;
-}
-
-/* Chrome/Safari 자동완성 파란 배경 제거 */
-.line-input input:-webkit-autofill,
-.line-input input:-webkit-autofill:hover,
-.line-input input:-webkit-autofill:focus,
-.line-input input:-webkit-autofill:active {
+  }
+  
+  /* Chrome/Safari 자동완성 파란 배경 제거 */
+  .line-input input:-webkit-autofill,
+  .line-input input:-webkit-autofill:hover,
+  .line-input input:-webkit-autofill:focus,
+  .line-input input:-webkit-autofill:active {
     -webkit-box-shadow: 0 0 0px 1000px #fff inset !important;
     -webkit-text-fill-color: #111 !important;
     transition: background-color 9999s ease-out 0s;
-}
-
-.gender-row {
-    display: flex;
-    gap: 20px;
-    padding: 6px 0;
-    border-bottom: none;
-}
-
-.email-check-row {
+  }
+  
+  /* 이메일 중복 체크 행: 한 줄만 */
+  .email-check-row {
     display: flex;
     align-items: center;
     border-bottom: 1px solid #e5e7eb;
-}
-
-.email-check-row input {
+  }
+  
+  .email-check-row input {
     flex: 1;
     border: none;
     outline: none;
     padding: 6px 0;
     font-size: 15px;
-}
-
-.check-btn {
+    background: transparent;
+  }
+  
+  /* 중복확인 버튼 */
+  .check-btn {
     margin-left: 8px;
     padding: 6px 10px;
     font-size: 13px;
@@ -164,9 +161,18 @@
     background: #fff;
     cursor: pointer;
     border-radius: 4px;
-}
-
-.check-btn:hover {
+  }
+  
+  .check-btn:hover {
     background: #111;
     color: #fff;
-}
+  }
+  
+  /* date 인풋 기본 테두리/배경 제거(브라우저 차이 최소화) */
+  input[type="date"] {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: inherit;
+    color: inherit;
+  }

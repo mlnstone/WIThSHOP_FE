@@ -4,6 +4,19 @@
     margin: 40px auto 0;
   }
   
+  /* 상단 로고 */
+  .login-header {
+    text-align: center;
+    padding: 20px 0;
+    margin-bottom: 16px;
+  }
+  .logo-btn {
+    font-size: 24px;
+    font-weight: 700;
+    text-decoration: none;
+    color: #111;
+  }
+  
   /* 제목 */
   .login-title {
     text-align: left;
@@ -20,22 +33,21 @@
     margin-bottom: 6px;
   }
   
-  /* 라인 인풋 (밑줄만) */
+  /* 라인 인풋 (인풋에만 밑줄) */
   .line-input {
-    border-bottom: 1px solid #e5e7eb;
     display: flex;
     align-items: center;
     padding: 6px 0;
+    border-bottom: none;
   }
   .line-input input {
     border: none;
     outline: none;
     flex: 1;
     font-size: 15px;
-    padding: 6px 0;
-  }
-  .line-input:focus-within {
-    border-bottom-color: #111;
+    padding: 8px 0;
+    border-bottom: 1px solid #ddd;
+    background-color: transparent;
   }
   
   /* 우측 아이콘 */
@@ -51,7 +63,7 @@
     padding: 0 4px;
   }
   
-  /* 로그인 버튼 (비활성 시 회색) */
+  /* 로그인 버튼 */
   .login-main-btn {
     width: 100%;
     height: 48px;
@@ -68,7 +80,7 @@
     cursor: not-allowed;
   }
   
-  /* 하단 링크 구분 */
+  /* 하단 링크 */
   .login-links {
     display: flex;
     align-items: center;
@@ -93,12 +105,12 @@
     background: #e5e7eb;
   }
   
-  /* 구글 로그인 버튼 (표준 다크) */
+  /* 구글 로그인 버튼 */
   .google-btn {
     display: block;
     width: 100%;
     height: 48px;
-    background: #111;         /* Google 표준 다크 */
+    background: #111;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -112,18 +124,13 @@
   }
   
   .mt-3 { margin-top: 12px; }
-
-/* Chrome / Safari 자동완성 파란 배경 제거 */
-.line-input input:-webkit-autofill,
-.line-input input:-webkit-autofill:hover,
-.line-input input:-webkit-autofill:focus,
-.line-input input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0px 1000px #fff inset !important; /* 배경을 흰색으로 채움 */
-  -webkit-text-fill-color: #111 !important;                  /* 글자색 유지 */
-  transition: background-color 9999s ease-out 0s;            /* 깜빡임 방지 트릭 */
-}
-
-/* 기본 배경은 투명하게 */
-.line-input input {
-  background-color: transparent;
-}
+  
+  /* 자동완성 파란 배경 제거 */
+  .line-input input:-webkit-autofill,
+  .line-input input:-webkit-autofill:hover,
+  .line-input input:-webkit-autofill:focus,
+  .line-input input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0px 1000px #fff inset !important;
+    -webkit-text-fill-color: #ddd !important;
+    transition: background-color 9999s ease-out 0s;
+  }

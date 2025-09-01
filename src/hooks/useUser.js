@@ -14,8 +14,8 @@ const pickNameFromToken = (p = {}) =>
   p.nickname ||
   p.given_name ||
   p.username ||
-  // p.email ||
-  // p.sub ||
+  p.email ||
+  p.sub ||
   "";
 
 const pickNameFromApi = (d = {}) =>
@@ -23,8 +23,8 @@ const pickNameFromApi = (d = {}) =>
   d.user_name ||
   d.name ||
   d.username ||
-  // d.userEmail ||
-  // d.email ||
+  d.userEmail ||
+  d.email ||
   "";
 
 // 🔹 로컬 캐시 읽기

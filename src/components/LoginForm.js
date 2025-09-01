@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import "./LoginForm.css";
 
 const BACKEND = process.env.REACT_APP_BACKEND;
@@ -71,63 +71,68 @@ export default function LoginForm() {
   const canSubmit = !!email && !!password && !loading;
 
   return (
-    <form onSubmit={handleSubmit} className="login-sheet">
-      <h3 className="login-title">로그인</h3>
-
-      {/* 이메일 */}
-      <label className="login-label">이메일</label>
-      <div className="line-input">
-        <input
-          type="email"
-          placeholder="이메일을 입력하세요"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
-        />
+    <div className="login-page">
+      {/* 상단 로고 버튼 */}
+      <div className="login-header">
+        <Link to="/" className="logo-btn">WIThSHOP</Link>
       </div>
 
-      {/* 비밀번호 */}
-      <label className="login-label mt-3">비밀번호</label>
-      <div className="line-input with-icon">
-        <input
-          type={showPw ? "text" : "password"}
-          placeholder="비밀번호를 입력하세요"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="current-password"
-        />
+      <form onSubmit={handleSubmit} className="login-sheet">
+        {/* 이메일 */}
+        <label className="login-label">이메일</label>
+        <div className="line-input">
+          <input
+            type="email"
+            placeholder="이메일을 입력하세요"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+          />
+        </div>
+
+        {/* 비밀번호 */}
+        <label className="login-label mt-3">비밀번호</label>
+        <div className="line-input with-icon">
+          <input
+            type={showPw ? "text" : "password"}
+            placeholder="비밀번호를 입력하세요"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+          />
+          <button
+            type="button"
+            className="ghost-icon"
+            aria-label="비밀번호 보기 전환"
+            onClick={() => setShowPw((v) => !v)}
+          >
+            {showPw ? "🙈" : "👁️"}
+          </button>
+        </div>
+
+        {/* 로그인 버튼 */}
         <button
-          type="button"
-          className="ghost-icon"
-          aria-label="비밀번호 보기 전환"
-          onClick={() => setShowPw((v) => !v)}
+          type="submit"
+          className={`login-main-btn ${canSubmit ? "" : "disabled"}`}
+          disabled={!canSubmit}
         >
-          {showPw ? "🙈" : "👁️"}
+          {loading ? "로그인 중..." : "로그인"}
         </button>
-      </div>
 
-      {/* 로그인 버튼 */}
-      <button
-        type="submit"
-        className={`login-main-btn ${canSubmit ? "" : "disabled"}`}
-        disabled={!canSubmit}
-      >
-        {loading ? "로그인 중..." : "로그인"}
-      </button>
+        {/* 하단 링크 */}
+        <div className="login-links">
+          <a href="/signup">회원가입</a>
+          <span className="divider" />
+          <button type="button" className="link-btn" onClick={onFindPassword}>
+            비밀번호 찾기
+          </button>
+        </div>
 
-      {/* 하단 링크 */}
-      <div className="login-links">
-        <a href="/signup">회원가입</a>
-        <span className="divider" />
-        <button type="button" className="link-btn" onClick={onFindPassword}>
-          비밀번호 찾기
-        </button>
-      </div>
-
-      {/* 소셜 로그인 (Google) */}
-      <a className="google-btn" href={googleLoginHref}>
-        Google 로그인
-      </a>
-    </form>
+        {/* 소셜 로그인 (Google) */}
+        <a className="google-btn" href={googleLoginHref}>
+          Google 로그인
+        </a>
+      </form>
+    </div>
   );
 }
