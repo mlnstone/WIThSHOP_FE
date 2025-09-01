@@ -85,6 +85,10 @@ a { text-decoration: none; color: inherit; }
   background: #ff3b30; color: #fff; font-size: 12px; line-height: 18px; text-align: center; font-weight: 700;
 }
 
+
+
+
+
 /* ===== 모바일: 가로 슬라이드 탭 ===== */
 @media (max-width: 768px) {
   .nav-list {
@@ -123,3 +127,4 @@ a { text-decoration: none; color: inherit; }
     background: linear-gradient(to left, rgba(255,255,255,1), rgba(255,255,255,0));
   }
 }
+

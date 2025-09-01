@@ -83,7 +83,7 @@ export default function useUser() {
   }, [token]);
 
   const needsSetup =
-    !!token && !!me && (!me.userName && !me.birth && !me.gender && !me.phone);
+    !!token && !!me && (!me.userName || !me.birth || !me.gender || !me.phone);
 
   const logout = () => signOut();
 
