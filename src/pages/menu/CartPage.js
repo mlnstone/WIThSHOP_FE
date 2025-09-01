@@ -8,7 +8,7 @@ import { createOrder } from "../../services/order";
 import { syncCartBadge } from "../../lib/syncCartBadge";
 import { useMe } from "../../providers/MeProvider";
 
-const SHIPPING_FEE = 3000;
+const SHIPPING_FEE = 1;
 
 const FALLBACK_IMG =
   'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="88" height="88"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="10" fill="%239ca3af">no image</text></svg>';
@@ -309,7 +309,7 @@ export default function CartPage() {
                   </button>
                 </div>
                 {item.stock && item.qty >= item.stock && (
-                  <div className="stock-note">재고 {item.stock}개 한도</div>
+                  <div className="stock-note">{item.stock}개 남았습니다!</div>
                 )}
               </div>
             </li>

@@ -17,22 +17,18 @@ async function ensureIamportLoaded() {
 /**
  * onBuyNow(menu, qty, options)
  *
- * @param {object} menu - { menuId, menuName, ... }
- * @param {number} qty  - 구매 수량 (1 이상)
+ * @param {object|null} menu - 단일상품 결제 시 { menuId, menuName, ... }, 장바구니 결제면 null 가능
+ * @param {number|null} qty  - 단일상품 결제 시 수량(1 이상), 장바구니 결제면 null 가능
  * @param {object} options
- *  - navigate: react-router의 navigate 함수
- *  - createOrder: 주문 생성 함수  ex) createOrder([{menuId, quantity}])
- *  - syncCartBadge: 배지 동기화 함수 (선택)
- *  - backend: 백엔드 베이스 URL (기본: process.env.REACT_APP_BACKEND || "")
- *  - token: 인증 토큰 (기본: localStorage.getItem("accessToken"))
- *  - impCode: 가맹점 식별코드 (기본: process.env.REACT_APP_IAMPORT_MERCHANT)
- *  - pg: PG사 (기본: "html5_inicis.INIpayTest")
- *  - buyer: 구매자 정보 { email, name, tel, addr } (선택)
- *  - useDynamicScript: true면 SDK를 동적으로 로드
- *
- *  // ✅ 혜택/장바구니용 추가 옵션
- *  - prepareByItems: true 면 /prepare-by-items 사용 (기본 false)
- *  - items: [{ menuId, quantity }] (없으면 menuId/qty로 자동 생성)
+ *  - navigate, createOrder, syncCartBadge
+ *  - backend: 기본 process.env.REACT_APP_BACKEND || ""
+ *  - token: 기본 localStorage.getItem("accessToken")
+ *  - impCode: 기본 process.env.REACT_APP_IAMPORT_MERCHANT
+ *  - pg: 기본 "html5_inicis.INIpayTest"
+ *  - buyer: { email, name, tel, addr }
+ *  - useDynamicScript: true면 SDK 동적 로드
+ *  - prepareByItems: true 면 /prepare-by-items 사용
+ *  - items: [{ menuId, quantity }]
  *  - userCouponId: string | null
  *  - usePoints: number
  *
@@ -52,26 +48,30 @@ export async function onBuyNow(menu, qty, options = {}) {
         email: options.user?.userEmail || "test@example.com",
         name: options.user?.userName || "테스트유저",
         tel: options.user?.phone || "010-0000-0000",
+        addr: options.user?.addr || "",
       },
       useDynamicScript = false,
 
-      // 새 옵션들 (prepare-by-items 활성화)
+      // 장바구니/혜택 결제 옵션
       prepareByItems = false,
       items,
       userCouponId = null,
       usePoints = 0,
     } = options;
 
-    if (!menu) {
-      alert("상품 정보를 불러오는 중입니다.");
-      return false;
-    }
-    if (!qty || qty < 1) {
-      alert("수량을 1개 이상 선택하세요.");
-      return false;
+    // ✅ 단일상품 결제일 때만 menu/qty 검사
+    if (!prepareByItems) {
+      if (!menu) {
+        alert("상품 정보를 불러오는 중입니다.");
+        return false;
+      }
+      if (!qty || qty < 1) {
+        alert("수량을 1개 이상 선택하세요.");
+        return false;
+      }
     }
 
-    // 0) 필요시 SDK 동적 로드
+    // 0) 필요시 포트원 SDK 동적 로드
     if (useDynamicScript) {
       const ok = await ensureIamportLoaded();
       if (!ok) {
@@ -85,20 +85,28 @@ export async function onBuyNow(menu, qty, options = {}) {
     let prep = null;
 
     if (prepareByItems) {
-      // ✅ 쿠폰/포인트/배송비 포함 사전검증
+      // 쿠폰/포인트/배송비 포함 사전검증
       const payload = {
-        items: Array.isArray(items) && items.length > 0
-          ? items
-          : [{ menuId: menu.menuId, quantity: qty }],
+        items:
+          Array.isArray(items) && items.length > 0
+            ? items
+            : menu && qty
+            ? [{ menuId: menu.menuId, quantity: qty }]
+            : [],
         userCouponId: userCouponId || null,
         usePoints: Math.max(0, Number(usePoints) || 0),
       };
+
+      if (!payload.items.length) {
+        alert("결제할 상품이 없습니다.");
+        return false;
+      }
 
       const prepRes = await fetch(`${backend}/api/payments/prepare-by-items`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(payload),
       });
@@ -113,12 +121,12 @@ export async function onBuyNow(menu, qty, options = {}) {
       merchant_uid = prep.merchant_uid;
       amount = prep.amount;
     } else {
-      // 🔁 기존 단순 수량 기반 사전검증 (혜택 없음)
+      // 기존 단순 사전검증
       const prepRes = await fetch(`${backend}/api/payments/prepare`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ quantity: qty }),
       });
@@ -129,9 +137,9 @@ export async function onBuyNow(menu, qty, options = {}) {
         return false;
       }
 
-      const prep = await prepRes.json(); // { merchant_uid, amount, quantity }
-      merchant_uid = prep.merchant_uid;
-      amount = prep.amount;
+      const result = await prepRes.json(); // { merchant_uid, amount, quantity }
+      merchant_uid = result.merchant_uid;
+      amount = result.amount;
     }
 
     // 2) 결제창 호출
@@ -142,19 +150,29 @@ export async function onBuyNow(menu, qty, options = {}) {
     const IMP = window.IMP;
     IMP.init(impCode);
 
+    const payTitle = (() => {
+      if (!prepareByItems) {
+        return `${menu?.menuName ?? "상품"} x ${qty}`;
+      }
+      const count = Array.isArray(items) ? items.length : 0;
+      if (count <= 0) return "장바구니 결제";
+      if (count === 1) return `장바구니: ${items[0].menuId}`;
+      return `장바구니 ${count}건`;
+    })();
+
     const payOk = await new Promise((resolve) => {
       IMP.request_pay(
         {
           pg,
           pay_method: "card",
-          merchant_uid,              // 서버 값
-          name: `${menu.menuName ?? "상품"} x ${qty}`,
-          amount,                    // 서버 값
+          merchant_uid, // 서버 생성값
+          name: payTitle,
+          amount, // 서버 계산값
           buyer_email: buyer.email,
           buyer_name: buyer.name,
           buyer_tel: buyer.tel,
           buyer_addr: buyer.addr,
-          // channelKey: process.env.REACT_APP_IAMPORT_CHANNEL_KEY, // 쓰는 경우
+          // channelKey: process.env.REACT_APP_IAMPORT_CHANNEL_KEY, // 사용하는 경우만
         },
         (rsp) => {
           if (!rsp || !rsp.success) {
@@ -168,12 +186,12 @@ export async function onBuyNow(menu, qty, options = {}) {
 
     if (!payOk || payOk === false) return false;
 
-    // 3) 사후검증 (여기서 쿠폰 사용 확정 + 포인트 차감)
+    // 3) 사후검증
     const verifyRes = await fetch(`${backend}/api/payments/verify`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: token ? `Bearer ${token}` : "",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({
         imp_uid: payOk.imp_uid,
@@ -189,21 +207,24 @@ export async function onBuyNow(menu, qty, options = {}) {
 
     // 4) 주문 생성
     if (typeof createOrder === "function") {
-      // prepare-by-items든 기존이든, 주문 생성은 라인아이템으로
       const orderItems = prepareByItems
-        ? (Array.isArray(items) && items.length ? items : [{ menuId: menu.menuId, quantity: qty }])
+        ? Array.isArray(items) && items.length
+          ? items
+          : [{ menuId: menu.menuId, quantity: qty }]
         : [{ menuId: menu.menuId, quantity: qty }];
-      const extras = prepareByItems && prep
-        ? {
-          merchantUid: merchant_uid,               // 선택(백엔드에서 쓸 계획 있으면)
-          discountCoupon: prep.discountCoupon ?? 0,
-          discountPoints: prep.discountPoints ?? 0,
-          shippingFee: prep.shippingFee ?? 0,
-          userCouponId: userCouponId || null,
-        }
-        : {};
-      const res = await createOrder(orderItems, extras);
 
+      const extras =
+        prepareByItems && prep
+          ? {
+              merchantUid: merchant_uid,
+              discountCoupon: prep.discountCoupon ?? 0,
+              discountPoints: prep.discountPoints ?? 0,
+              shippingFee: prep.shippingFee ?? 0,
+              userCouponId: userCouponId || null,
+            }
+          : {};
+
+      const res = await createOrder(orderItems, extras);
       if (!res?.ok) {
         alert(res?.data?.message || "주문 생성 실패");
         return false;
