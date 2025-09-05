@@ -1,6 +1,6 @@
 // src/pages/menu/MenuDetailPage.js
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate, useParams, useLocation, useSearchParams } from "react-router-dom";
 import AddToCartButton from "../../components/cart/AddToCartButton";
 import BuyNowButton from "../../components/payment/BuyNowButton";
 import InstallmentInfo from "../../components/payment/InstallmentInfo";
@@ -22,6 +22,7 @@ export default function MenuDetailPage() {
   const { menuId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [sp, setSp] = useSearchParams();
 
   // 전역 사용자
   const { loading: meLoading } = useMe();
@@ -36,12 +37,16 @@ export default function MenuDetailPage() {
   const [reviewCount, setReviewCount] = useState(0);
   const [avgRating, setAvgRating] = useState(null);
   const [reviews, setReviews] = useState([]);
-  const [reviewPage, setReviewPage] = useState(0);
+
+  // ✅ URL 쿼리 → 0-base page 추출 (Page 대문자도 허용)
+  const reviewPage = useMemo(() => {
+    const raw = sp.get("page") ?? sp.get("Page") ?? "0";
+    const n = Number(raw);
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  }, [sp]);
+
   const [reviewSize, setReviewSize] = useState(5);
-  const [reviewPageData, setReviewPageData] = useState({
-    number: 0,
-    totalPages: 1,
-  });
+  const [reviewPageData, setReviewPageData] = useState({ number: 0, totalPages: 1 });
 
   // 배송/할부
   const [shippingFee, setShippingFee] = useState(3000);
@@ -79,9 +84,7 @@ export default function MenuDetailPage() {
         alive && setMenuLoading(false);
       }
     })();
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, [menuId]);
 
   // 리뷰 요약
@@ -100,11 +103,7 @@ export default function MenuDetailPage() {
   const loadReviews = useCallback(
     async (page = reviewPage, size = reviewSize) => {
       try {
-        const qs = new URLSearchParams({
-          page: String(page),
-          size: String(size),
-          sort: "createdAt,desc",
-        });
+        const qs = new URLSearchParams({ page: String(page), size: String(size), sort: "createdAt,desc" });
         const r = await fetch(`/menus/${menuId}/reviews?${qs.toString()}`);
         const j = await r.json().catch(() => null);
         if (!j) return;
@@ -118,12 +117,38 @@ export default function MenuDetailPage() {
     [menuId, reviewPage, reviewSize]
   );
 
+  // ✅ 메뉴 변경 시: page 쿼리 정규화/초기화만 수행 (데이터 로드는 아래 effect가 담당)
   useEffect(() => {
     if (!menuId) return;
     loadSummary();
-    setReviewPage(0);
-    loadReviews(0, reviewSize);
-  }, [menuId, loadSummary, loadReviews, reviewSize]);
+
+    // page 쿼리가 전혀 없으면 0으로 세팅
+    if (!sp.has("page") && !sp.has("Page")) {
+      setSp((prev) => {
+        const q = new URLSearchParams(prev);
+        q.set("page", "0");
+        return q;
+      }, { replace: true });
+      return;
+    }
+
+    // Page(대문자)로 들어온 경우 소문자 page로 정규화
+    if (sp.has("Page") && !sp.has("page")) {
+      const v = sp.get("Page");
+      setSp((prev) => {
+        const q = new URLSearchParams(prev);
+        q.delete("Page");
+        q.set("page", v ?? "0");
+        return q;
+      }, { replace: true });
+    }
+  }, [menuId, sp, setSp, loadSummary]);
+
+  // ✅ reviewPage / reviewSize / menuId 변할 때마다 목록 로드
+  useEffect(() => {
+    if (!menuId) return;
+    loadReviews(reviewPage, reviewSize);
+  }, [menuId, reviewPage, reviewSize, loadReviews]);
 
   // 배송비
   useEffect(() => {
@@ -136,13 +161,11 @@ export default function MenuDetailPage() {
         alive && typeof fee === "number" && setShippingFee(fee);
       } catch {}
     })();
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, []);
 
   // 로딩/에러
-  if (menuLoading || meLoading) return <div className="container py-4">불러오는 중…</div>;
+  if (menuLoading || meLoading) return <div className="container py-4">불러오는 중...</div>;
   if (err) {
     return (
       <div className="container py-4">
@@ -157,12 +180,16 @@ export default function MenuDetailPage() {
   }
   if (!menu) return null;
 
-  const { number, totalPages } = reviewPageData;
+  const { totalPages } = reviewPageData;
 
+  // ✅ Pagination onChange (0-base)
   const goReviewPage = (p) => {
     const next = Math.max(0, Math.min(totalPages - 1, p));
-    setReviewPage(next);
-    loadReviews(next, reviewSize);
+    setSp((prev) => {
+      const q = new URLSearchParams(prev);
+      q.set("page", String(next));
+      return q;
+    });
     window.scrollTo({
       top: document.getElementById("reviews-section")?.offsetTop ?? 0,
       behavior: "smooth",
@@ -183,15 +210,11 @@ export default function MenuDetailPage() {
         {/* 이미지 영역 */}
         <div className="mdp-main">
           {images.length > 1 && (
-            <button className="mdp-arrow left" onClick={() => go(-1)} aria-label="이전">
-              ‹
-            </button>
+            <button className="mdp-arrow left" onClick={() => go(-1)} aria-label="이전">‹</button>
           )}
           <img src={images[idx]} alt={menu.menuName} />
           {images.length > 1 && (
-            <button className="mdp-arrow right" onClick={() => go(+1)} aria-label="다음">
-              ›
-            </button>
+            <button className="mdp-arrow right" onClick={() => go(+1)} aria-label="다음">›</button>
           )}
         </div>
 
@@ -221,25 +244,14 @@ export default function MenuDetailPage() {
           )}
 
           <dl className="mdp-meta">
-            <div>
-              <dt>배송방법</dt>
-              <dd>택배</dd>
-            </div>
-            <div>
-              <dt>배송비</dt>
-              <dd>{shippingFee.toLocaleString()}원</dd>
-            </div>
+            <div><dt>배송방법</dt><dd>택배</dd></div>
+            <div><dt>배송비</dt><dd>{shippingFee.toLocaleString()}원</dd></div>
             <div>
               <dt>무이자 할부</dt>
-              <dd>
-                <button className="link" onClick={() => setOpenInstallment(true)}>
-                  카드 자세히 보기
-                </button>
-              </dd>
+              <dd><button className="link" onClick={() => setOpenInstallment(true)}>카드 자세히 보기</button></dd>
             </div>
           </dl>
 
-          {/* 좌측 정렬 · 세로 배치(수량만) */}
           <div className="d-flex flex-column gap-3 text-start" style={{ maxWidth: 440 }}>
             <div>
               <label className="form-label">수량</label>
@@ -284,8 +296,12 @@ export default function MenuDetailPage() {
               onChange={(e) => {
                 const s = Number(e.target.value) || 5;
                 setReviewSize(s);
-                setReviewPage(0);
-                loadReviews(0, s);
+                // page=0으로 쿼리 초기화 (로드는 effect가 처리)
+                setSp((prev) => {
+                  const q = new URLSearchParams(prev);
+                  q.set("page", "0");
+                  return q;
+                });
               }}
             >
               <option value={5}>5</option>
@@ -322,13 +338,12 @@ export default function MenuDetailPage() {
           ))}
         </div>
 
-        {/* 공용 Pagination 적용 */}
         <Pagination
-          page={number}
-          totalPages={totalPages}
+          page={reviewPage}                      // 0-base (URL 쿼리 기준)
+          totalPages={reviewPageData.totalPages}
           blockSize={5}
-          onChange={goReviewPage}
-          variant="dark"  // 톤 통일: 'dark' | 'primary' | 'gray'
+          onChange={goReviewPage}                // 0-base로 받음
+          variant="dark"
           size="sm"
           className="justify-content-center"
         />

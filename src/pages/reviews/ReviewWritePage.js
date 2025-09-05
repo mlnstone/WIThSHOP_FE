@@ -75,7 +75,7 @@ export default function ReviewWritePage() {
       <h2 className="fw-bold mb-3">리뷰 작성</h2>
 
       {/* 메뉴 이름/이미지 표시 */}
-      {loading && <div className="text-muted mb-3">메뉴 정보를 불러오는 중…</div>}
+      {loading && <div className="text-muted mb-3">메뉴 정보를 불러오는 중...</div>}
       {menu && (
         <div className="d-flex align-items-center mb-3">
           <img

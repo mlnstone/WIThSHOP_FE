@@ -1,4 +1,4 @@
-// src/providers/MeProvider.jsx
+// src/providers/MeProvider.js
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 
 const MeCtx = createContext(null);

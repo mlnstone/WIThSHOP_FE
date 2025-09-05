@@ -1,4 +1,5 @@
-// header.js
+// src/components/layout/Header.js
+
 import React, { useEffect, useState } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import useUser from "../../hooks/useUser";

@@ -5,8 +5,8 @@ import { createRoot } from 'react-dom/client';
 import App from './app/App';
 import './index.css';
 import { MeProvider } from './providers/MeProvider';
+import "bootstrap-icons/font/bootstrap-icons.css";
 
-// ✅ root는 단 한 번만 만들고, Provider 트리도 한 번만 감쌉니다.
 const rootEl = document.getElementById('root');
 const root = createRoot(rootEl);
 

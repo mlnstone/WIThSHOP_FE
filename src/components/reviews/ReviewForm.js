@@ -1,4 +1,4 @@
-// src/components/review/ReviewForm.js
+// src/components/reviews/ReviewForm.js
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 

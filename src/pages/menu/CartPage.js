@@ -180,7 +180,7 @@ export default function CartPage() {
     }
   }, [me, navigate, selectedItems]);
 
-  if (loading) return <div className="cart-page container">불러오는 중…</div>;
+  if (loading) return <div className="cart-page container">불러오는 중...</div>;
 
   return (
     <div className="cart-page container">

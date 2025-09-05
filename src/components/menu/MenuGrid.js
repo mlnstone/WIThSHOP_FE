@@ -2,35 +2,26 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-// ---- 간단 캐시: 같은 메뉴의 리뷰 요약 중복 요청 방지 ----
-const reviewCache = new Map(); // key: menuId, value: { avg, count }
+const reviewCache = new Map();
 
-// ---- 커스텀 훅: 리뷰 요약 불러오기 ----
 function useReviewSummary(menuId, seedAvg, seedCount) {
-  const [avg, setAvg] = useState(
-    typeof seedAvg === "number" ? Number(seedAvg) : null
-  );
-  const [count, setCount] = useState(
-    typeof seedCount === "number" ? Number(seedCount) : null
-  );
+  const [avg, setAvg] = useState(typeof seedAvg === "number" ? Number(seedAvg) : null);
+  const [count, setCount] = useState(typeof seedCount === "number" ? Number(seedCount) : null);
   const [loading, setLoading] = useState(false);
   const abortRef = useRef(null);
 
   const needFetch = useMemo(() => {
     if (!menuId) return false;
-    if (avg != null && count != null) return false; // 이미 아이템이 제공
-    if (reviewCache.has(menuId)) return false;      // 캐시에 있음
+    if (avg != null && count != null) return false;
+    if (reviewCache.has(menuId)) return false;
     return true;
   }, [menuId, avg, count]);
 
   useEffect(() => {
     if (!menuId) return;
-
-    // 캐시에 있으면 즉시 사용
     if (reviewCache.has(menuId)) {
       const { avg: cAvg, count: cCount } = reviewCache.get(menuId);
-      setAvg(cAvg);
-      setCount(cCount);
+      setAvg(cAvg); setCount(cCount);
       return;
     }
     if (!needFetch) return;
@@ -41,9 +32,7 @@ function useReviewSummary(menuId, seedAvg, seedCount) {
 
     (async () => {
       try {
-        const r = await fetch(`/menus/${menuId}/reviews/summary`, {
-          signal: controller.signal,
-        });
+        const r = await fetch(`/menus/${menuId}/reviews/summary`, { signal: controller.signal });
         if (!r.ok) return;
         const j = await r.json().catch(() => null);
         const a = Number(j?.average);
@@ -51,8 +40,7 @@ function useReviewSummary(menuId, seedAvg, seedCount) {
         const safeAvg = Number.isFinite(a) ? Number(a.toFixed(2)) : null;
         const safeCnt = Number.isFinite(c) ? c : 0;
         reviewCache.set(menuId, { avg: safeAvg, count: safeCnt });
-        setAvg(safeAvg);
-        setCount(safeCnt);
+        setAvg(safeAvg); setCount(safeCnt);
       } finally {
         setLoading(false);
       }
@@ -63,88 +51,77 @@ function useReviewSummary(menuId, seedAvg, seedCount) {
 
   return { avg, count, loading };
 }
-// ---- 카드 한 장 컴포넌트 (훅은 여기서 사용) ----
-function MenuCard({ item, onAdd, onGoDetail, isLoading }) {
+
+function MenuCard({ item, onAdd, onGoDetail, isLoading, colClass }) {
   const id = item.menuId ?? item.id;
   const name = item.menuName ?? item.name ?? "이름 없음";
-  const img = item.image ?? "https://via.placeholder.com/300x200?text=No+Image";
+  const img =
+    "https://i.namu.wiki/i/tlD-CsVpOQNVhXNTdFNOVYVoHvto8Dfwd1kls-ayVEd2WNN8Qem79cJy1xzJ6vpLAw67HDnGU4b5CgvoqUb5Q-HKkIg7m0I8QQHBf1UEXwa6F2i0iBhxFtqU8-nXEhelUDVssDsBwtHNmu5eEPTyWQ.webp";
 
-  // 가격 계산: 그리드에서도 디테일과 동일한 규칙
-  const price = item.salePrice ?? item.price ?? 0;                 // 실제 판매가
-  const compareAt = item.originalPrice ?? item.listPrice ?? null;  // 정가(있을 때만)
+
+  const price = item.salePrice ?? item.price ?? 0;
+  const compareAt = item.originalPrice ?? item.listPrice ?? null;
   const discountPct =
     typeof compareAt === "number" && compareAt > price
       ? Math.round(((compareAt - price) / compareAt) * 100)
       : 0;
 
-  // 서버에서 이미 제공할 수도 있는 필드명 대응
   const seedAvg =
     item.avgRating ??
     item.averageRating ??
     item.ratingAverage ??
     (typeof item.rating === "number" ? item.rating : null);
-  const seedCount =
-    item.reviewCount ?? item.reviewsCount ?? item.ratingCount ?? null;
+  const seedCount = item.reviewCount ?? item.reviewsCount ?? item.ratingCount ?? null;
 
   const { avg, count } = useReviewSummary(id, seedAvg, seedCount);
 
   return (
-    <div className="col-6 col-md-4 col-lg-3" key={id}>
+    <div className={colClass} key={id}>
       <div
-        className="card h-100"
+        className="card h-100 card-hover"
         role="button"
         tabIndex={0}
         onClick={() => onGoDetail(id)}
         onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onGoDetail(id)}
         style={{ cursor: "pointer" }}
       >
-        <img
-          src={img}
-          alt={name}
-          className="card-img-top"
-          style={{ objectFit: "cover", height: 160 }}
-          loading="lazy"
-        />
-        <div className="card-body d-flex flex-column">
-          {/* 이름 */}
-          <div className="fw-semibold mb-1" title={name} style={{ minHeight: 24 }}>
-            {name}
-          </div>
+        {/* ✅ 1:1 정사각형 이미지 영역 */}
+        <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", overflow: "hidden" }}>
+          <img
+            src={img}
+            alt={name}
+            className="card-img-top"
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+            loading="lazy"
+            onError={(e) => (e.currentTarget.src = "https://via.placeholder.com/600?text=No+Image")}
+          />
+        </div>
 
-          {/* ⭐️ 평점/리뷰수 (있을 때만) */}
+        <div className="card-body d-flex flex-column">
+          <div className="fw-semibold mb-1" title={name} style={{ minHeight: 24 }}>{name}</div>
+
           {avg != null && count != null && (
             <div className="text-muted small mb-1 d-flex align-items-center gap-1" aria-label={`평점 ${avg}점, 리뷰 ${count}개`}>
               <span className="star-icon" aria-hidden="true" />
               <span>{avg.toFixed(1)} ({count.toLocaleString()})</span>
             </div>
           )}
+
           {typeof compareAt === "number" && compareAt > price && (
             <div className="text-muted" style={{ textDecoration: "line-through" }}>
               {compareAt.toLocaleString()}원
             </div>
           )}
-          {/* 가격 영역 */}
+
           <div className="mb-1 d-flex align-items-baseline gap-2">
-            {discountPct > 0 && (
-              <span className="fw-bold" style={{ color: "#E03131" }}>
-                {discountPct}%{/* 빨강 퍼센트 */}
-              </span>
-            )}
-            <span className="fw-bold" style={{ fontSize: 18, color: "#0B1320" }}>
-              {price.toLocaleString()}원
-            </span>
+            {discountPct > 0 && <span className="fw-bold" style={{ color: "#E03131" }}>{discountPct}%</span>}
+            <span className="fw-bold" style={{ fontSize: 18, color: "#0B1320" }}>{price.toLocaleString()}원</span>
           </div>
 
-
-          {/* 담기 */}
           <button
             className="btn btn-sm btn-outline-dark mt-auto"
             disabled={isLoading}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onAdd(id, 1);
-            }}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAdd(id, 1); }}
           >
             {isLoading ? "담는 중..." : "담기"}
           </button>
@@ -154,8 +131,7 @@ function MenuCard({ item, onAdd, onGoDetail, isLoading }) {
   );
 }
 
-// ---- 그리드(목록) 컴포넌트 ----
-export default function MenuGrid({ items }) {
+export default function MenuGrid({ items, colClass = "col-6 col-md-4 col-lg-3" }) {
   const [loadingId, setLoadingId] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -169,9 +145,7 @@ export default function MenuGrid({ items }) {
       : { "Content-Type": "application/json" };
   };
 
-  const goDetail = (menuId) => {
-    navigate(`/menus/${menuId}`, { state: { from: location } });
-  };
+  const goDetail = (menuId) => navigate(`/menus/${menuId}`, { state: { from: location } });
 
   const handleAdd = async (menuId, quantity = 1) => {
     const token = localStorage.getItem("accessToken");
@@ -211,6 +185,7 @@ export default function MenuGrid({ items }) {
             onAdd={handleAdd}
             onGoDetail={goDetail}
             isLoading={loadingId === id}
+            colClass={colClass}  
           />
         );
       })}

@@ -24,7 +24,7 @@ export default function MyPage() {
     return () => controller.abort();
   }, []);
 
-  if (loading) return <div className="container py-4">불러오는 중…</div>;
+  if (loading) return <div className="container py-4">불러오는 중...</div>;
   if (!me) return <div className="container py-4">로그인이 필요합니다.</div>;
 
   // 가입일: 날짜만

@@ -93,8 +93,8 @@ export default function BoardListPage() {
   };
 
   // 렌더 준비
-  if (loading) return <div className="container-xxl py-5 text-center">불러오는 중…</div>;
-  if (!pageData) return <div className="container-xxl py-5 text-center">목록을 불러오지 못했습니다.</div>;
+  if (loading) return <div className="container-xxl py-4">불러오는 중...</div>;
+  if (!pageData) return <div className="container-xxl py-4">목록을 불러오지 못했습니다.</div>;
 
   const { content = [], number = 0, totalPages = 1 } = pageData;
   const rowNoBase = number * size;
@@ -194,49 +194,81 @@ export default function BoardListPage() {
       </form>
 
       {/* 표 */}
-      <div className="card border-x-0 shadow-none" style={{ borderRadius: 0 }}>
-        <div className="table-responsive">
-          <table className="table mb-0 align-middle board-table" style={{ minWidth: 920 }}>
-            <thead className="table-light">
-              <tr>
-                <th style={{ width: 110 }} className="text-center">번호</th>
-                <th className="text-center">제목</th>
-                <th style={{ width: 180 }} className="text-center">작성자</th>
-                <th style={{ width: 160 }} className="text-center">작성일</th>
-                <th style={{ width: 120 }} className="text-center">조회</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white">
-              {content.map((b, idx) => {
-                const no = rowNoBase + idx + 1;
-                const writer = b.writerName || b.username || b.authorName || b.createdBy || "운영자";
-                return (
-                  <tr key={b.boardId} className="bg-white">
-                    <td className="text-center">{no}</td>
-                    <td className="text-center">
-                      <Link
-                        to={`/board/${b.boardId}`}
-                        className="text-decoration-none text-dark fw-semibold"
-                      >
-                        {b.boardTitle}
-                      </Link>
-                    </td>
-                    <td className="text-center text-muted small">{writer}</td>
-                    <td className="text-center text-muted small">{fmtDate(b.createdAt)}</td>
-                    <td className="text-center text-muted small">{b.hit ?? 0}</td>
-                  </tr>
-                );
-              })}
-              {content.length === 0 && (
-                <tr className="bg-white">
-                  <td colSpan={5} className="text-center py-5 text-muted">게시글이 없습니다.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <div className="card border-x-0 shadow-none d-none d-sm-block" style={{ borderRadius: 0 }}>
+  <div className="table-responsive">
+    <table className="table mb-0 align-middle board-table" style={{ minWidth: 920 }}>
+      <thead className="table-light">
+        <tr>
+          <th style={{ width: 110 }} className="text-center">번호</th>
+          <th className="text-center">제목</th>
+          <th style={{ width: 180 }} className="text-center">작성자</th>
+          <th style={{ width: 160 }} className="text-center">작성일</th>
+          <th style={{ width: 120 }} className="text-center">조회</th>
+        </tr>
+      </thead>
+      <tbody className="bg-white">
+        {content.map((b, idx) => {
+          const no = rowNoBase + idx + 1;
+          const writer = b.writerName || b.username || b.authorName || b.createdBy || "운영자";
+          return (
+            <tr key={b.boardId} className="bg-white">
+              <td className="text-center">{no}</td>
+              <td className="text-center">
+                <Link to={`/board/${b.boardId}`} className="text-decoration-none text-dark fw-semibold">
+                  {b.boardTitle}
+                </Link>
+              </td>
+              <td className="text-center text-muted small">{writer}</td>
+              <td className="text-center text-muted small">{fmtDate(b.createdAt)}</td>
+              <td className="text-center text-muted small">{b.hit ?? 0}</td>
+            </tr>
+          );
+        })}
+        {content.length === 0 && (
+          <tr className="bg-white">
+            <td colSpan={5} className="text-center py-5 text-muted">게시글이 없습니다.</td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
+{/* ===== 모바일(<sm) 리스트 ===== */}
+<div className="d-sm-none">
+  {/* 모바일 전용 보조 스타일 */}
+  <style>{`
+    .line-2 {
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  `}</style>
 
+  <ul className="list-group list-group-flush bg-white rounded-3 overflow-hidden">
+    {content.map((b) => {
+      const writer = b.writerName || b.username || b.authorName || b.createdBy || "운영자";
+      return (
+        <li key={b.boardId} className="list-group-item px-3">
+          <Link
+            to={`/board/${b.boardId}`}
+            className="d-block text-dark fw-semibold text-decoration-none line-2"
+          >
+            {b.boardTitle}
+          </Link>
+          <div className="text-muted small mt-1 d-flex flex-wrap gap-1">
+            <span>{writer}</span>
+            <span className="px-1">·</span>
+            <span>{fmtDate(b.createdAt)}</span>
+            <span className="px-1">·</span>
+            <span>조회 {b.hit ?? 0}</span>
+          </div>
+        </li>
+      );
+    })}
+    {content.length === 0 && (
+      <li className="list-group-item text-center text-muted py-4">게시글이 없습니다.</li>
+    )}
+  </ul>
+</div>
       {/* 페이지네이션 – 공용 컴포넌트 사용 */}
       <Pagination
         page={number}

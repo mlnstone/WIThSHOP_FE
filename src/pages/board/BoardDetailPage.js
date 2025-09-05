@@ -18,7 +18,7 @@ export default function BoardDetailPage() {
       .finally(() => setLoading(false));
   }, [boardId]);
 
-  if (loading) return <div className="container py-4">불러오는 중…</div>;
+  if (loading) return <div className="container py-4">불러오는 중...</div>;
   if (!data) return <div className="container py-4">게시글을 불러오지 못했습니다.</div>;
 
   return (

@@ -38,7 +38,7 @@ export default function CategoryPage() {
       .finally(() => setLoading(false));
   }, [categoryId, page]);
 
-  if (loading) return <div className="container py-4">불러오는 중…</div>;
+  if (loading) return <div className="container py-4">불러오는 중...</div>;
   if (!pageData) return <div className="container py-4">목록을 불러오지 못했습니다.</div>;
 
   const { content = [], number = 0, totalPages = 1 } = pageData;

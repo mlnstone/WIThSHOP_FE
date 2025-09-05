@@ -1,47 +1,42 @@
 /* src/components/MainCarousel.css */
 
-/* 래퍼 */
 .main-carousel {
-    width: 100%;
-    max-width: 1920px;
-    margin: 0 auto;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+.main-carousel .slick-slider,
+.main-carousel .slick-list,
+.main-carousel .slick-track {
+  width: 100%;
+}
+.main-carousel .slick-list {
+  overflow: hidden;
+}
+
+/* ✅ 비율은 1920:650 유지, 단 최대 높이는 650px */
+.banner-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1920 / 650;
+  max-height: 650px;
+  overflow: hidden;
+}
+
+.banner-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* 모바일 보정 (화면이 너무 좁으면 높이 좀 더 유연하게) */
+@media (max-width: 768px) {
+  .banner-frame {
+    aspect-ratio: 16 / 9;
+    max-height: none; /* 모바일은 꽉 채우도록 */
   }
-  
-  /* 양옆 삐져나옴 방지 */
-  .main-carousel .slick-list {
-    overflow: hidden;
-  }
-  
-  /* --- 포커스/아웃라인 제거 (캐러셀 내부에만) --- */
-  /* slick이 내부에 tabindex 요소를 만들어서 그쪽까지 제거 */
-  .main-carousel .slick-slide [tabindex],
-  .main-carousel .slick-slide [tabindex]:focus,
-  .main-carousel .slick-slide [tabindex]:focus-visible,
-  .main-carousel .slick-slide,
-  .main-carousel .slick-slide:focus {
-    outline: none !important;
-    box-shadow: none !important;
-  }
-  
-  /* 이미지 자체 포커스/아웃라인 제거 */
-  .main-carousel img,
-  .main-carousel img:focus,
-  .main-carousel img:focus-visible {
-    outline: none;
-    border: none;
-  }
-  
-  /* 배너 이미지 */
-  .banner-img {
-    display: block;
-    width: 100%;
-    height: clamp(220px, 20vw, 400px); /* 모바일~데스크탑 부드럽게 */
-    object-fit: cover; /* 잘라서 꽉 채우기 */
-  }
-  
-  /* 좁은 화면에서 조금 더 낮게 */
-  @media (max-width: 768px) {
-    .banner-img {
-      height: 240px;
-    }
-  }
+}

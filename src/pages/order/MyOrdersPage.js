@@ -73,7 +73,7 @@ export default function MyOrdersPage() {
   const goPage = (p) => setParams({ page: p });
   const setSortOrder = (order) => setParams({ page: 0, sort: order });
 
-  if (loading) return <div className="container py-4">불러오는 중…</div>;
+  if (loading) return <div className="container py-4">불러오는 중...</div>;
   if (error) return <div className="container py-4">{error}</div>;
   if (!pageData) return <div className="container py-4">목록을 불러오지 못했습니다.</div>;
 

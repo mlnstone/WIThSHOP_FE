@@ -55,7 +55,20 @@
 
 .mdp-reviews{margin-top:48px}
 .card {border-radius: 4px !important;}
-  
+.card-hover .card-img-top {
+  transition: transform .25s ease, filter .25s ease;
+}
+.card-hover:hover .card-img-top {
+  transform: scale(1.04);
+  filter: brightness(.9);   /* 이미지만 살짝 어둡게 */
+}
+/* 이미지도 살짝 따라 확대 (선택) 썸네일 */
+/* .card-hover .thumb img {
+  transition: transform .3s ease;
+}
+.card-hover:hover .thumb img {
+  transform: scale(1.04);
+} */
 .btn {border-radius: 4px !important;}
 
 /* 가벼운 별점 스타일 */
@@ -163,6 +176,33 @@
   justify-content: center;
   gap: 8px;
 }
+
+/* 모든 상품 카드 썸네일을 1:1로 고정 */
+.thumb{
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+.thumb > img{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100% !important;   /* 어떤 규칙이 와도 높이 100% */
+  object-fit: cover;
+}
+
+/* 혹시 다른 곳에서 고정 높이를 줬다면 무력화 */
+.card-img-top{
+  height: auto !important;
+  max-height: none !important;
+}
 @media (max-width: 480px){
   .mdp-actions { grid-template-columns: 1fr; }
+}
+
+/* 터치 환경에선 확대 끄고 싶으면 */
+@media (hover: none) {
+  .card-hover:hover { transform: none; filter: none; box-shadow: none; }
+  .card-hover:hover .thumb img { transform: none; }
 }

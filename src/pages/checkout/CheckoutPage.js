@@ -236,7 +236,7 @@ export default function BenefitsPage() {
     navigate,
   ]);
 
-  if (meLoading || !menu) return <div className="container py-4">불러오는 중…</div>;
+  if (meLoading || !menu) return <div className="container py-4">불러오는 중...</div>;
 
   return (
     <div className="container py-4" style={{ maxWidth: 720 }}>

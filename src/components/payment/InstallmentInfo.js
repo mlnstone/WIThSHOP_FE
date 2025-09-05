@@ -61,7 +61,7 @@ export default function InstallmentInfo({ open, onClose }) {
 
         <div className="installment-body">
           {loading ? (
-            <div className="muted">불러오는 중…</div>
+            <div className="muted">불러오는 중...</div>
           ) : plans.length === 0 ? (
             <div className="muted">현재 제공되는 무이자 할부 정보가 없습니다.</div>
           ) : (

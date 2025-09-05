@@ -46,7 +46,7 @@ export default function MyReviewsPage() {
 
   const goPage = (p) => setSp({ page: String(p) });
 
-  if (loading) return <div className="container py-4">불러오는 중…</div>;
+  if (loading) return <div className="container py-4">불러오는 중...</div>;
   if (err) return <div className="container py-4">{err}</div>;
   if (!data) return null;
 

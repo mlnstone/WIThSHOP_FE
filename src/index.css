@@ -1,3 +1,4 @@
+/* index.css */
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -66,4 +67,30 @@ code {
   vertical-align: middle;
   padding-top: 14px;
   padding-bottom: 14px;
+}
+/* 이미 있으니 유지 */
+html, body { overflow-x: hidden; }
+
+/* full-bleed 래퍼 */
+.best-wrap {
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  width: 100vw;                /* 화면 가로 꽉 */
+}
+
+/* 내부 컨테이너 보호: 초울트라 모니터에서 너무 길어지지 않게 */
+.best-wrap .container-xxl {
+  max-width: 1600px;           /* 취향껏 1400~1800px 사이 추천 */
+  padding-left: 1rem;          /* 모바일에서 좌/우 여백 살짝 */
+  padding-right: 1rem;
+}
+
+/* 화면 높이 채우기 기본값 */
+html, body, #root { height: 100%; }
+
+.app-container { min-height: 100vh; display: flex; flex-direction: column; }
+.app-main { flex: 1; min-height: 0; } /* 필요시 가운데 정렬하려면 align-items/justify-content 추가 */
+
+@supports (width: 100dvw) {
+  .best-wrap { width: 100dvw; }   /* 동적 뷰포트 단위가 지원되면 더 정확 */
 }
