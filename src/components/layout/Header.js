@@ -1,3 +1,4 @@
+// header.js
 import React, { useEffect, useState } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import useUser from "../../hooks/useUser";
@@ -126,22 +127,35 @@ export default function Header({ user, onLogout }) {
           </Link>
 
           {isLoggedIn ? (
-            <>
-              <span className="hello">
-                <strong>{user.name}</strong>
-                {isAdmin && <span className="badge">관리자</span>} 님
-              </span>
-              <Link className="link-btn" to={needsSetup ? "/profile-setup" : "/me"}>
-                {needsSetup ? "프로필 설정" : "마이페이지"}
-              </Link>
-              <button className="link-btn" onClick={onLogout}>로그아웃</button>
-            </>
-          ) : (
-            <>
-              <Link className="link-btn" to="/login">로그인</Link>
-              <Link className="link-btn" to="/signup">회원가입</Link>
-            </>
-          )}
+  <>
+    <div className="profile-menu">
+      {/* 클릭 버튼이 아니라 그냥 텍스트 형태 */}
+      <span className="hello-text">
+        <strong>{user.name}</strong>님
+        {isAdmin && <span className="badge">관리자</span>}
+      </span>
+
+      {/* 드롭다운: hover/focus로 열림 (CSS에서 제어) */}
+      <ul className="dropdown-menu">
+        <li>
+          <Link to={needsSetup ? "/profile-setup" : "/me"}>
+            {needsSetup ? "프로필 설정" : "마이페이지"}
+          </Link>
+        </li>
+        <li>
+          <Link to="/me/orders">주문 내역</Link>
+        </li>
+      </ul>
+    </div>
+
+    <button className="link-btn" onClick={onLogout}>로그아웃</button>
+  </>
+) : (
+  <>
+    <Link className="link-btn" to="/login">로그인</Link>
+    <Link className="link-btn" to="/signup">회원가입</Link>
+  </>
+)}
         </div>
       </div>
 

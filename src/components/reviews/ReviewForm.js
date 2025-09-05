@@ -2,9 +2,9 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-export default function ReviewForm({ menuId, onSuccess }) {
-  const [rating, setRating] = useState(5);       // 1~5 정수
-  const [hover, setHover]   = useState(0);       // 호버 시 임시 강조
+export default function ReviewForm({ menuId, orderCode, onSuccess }) {
+  const [rating, setRating] = useState(5);    // 1~5 정수
+  const [hover, setHover]   = useState(0);
   const [title, setTitle]   = useState("");
   const [content, setContent] = useState("");
   const [image, setImage]   = useState("");
@@ -41,6 +41,10 @@ export default function ReviewForm({ menuId, onSuccess }) {
       alert("평점은 정수 1~5만 가능합니다.");
       return;
     }
+    if (!orderCode) {
+      alert("주문번호가 없습니다. 다시 시도해 주세요.");
+      return;
+    }
 
     try {
       setSubmitting(true);
@@ -49,6 +53,7 @@ export default function ReviewForm({ menuId, onSuccess }) {
         headers: authHeaders(),
         body: JSON.stringify({
           menuId,
+          orderCode,                 // ✅ 서버로 주문번호 전달
           rating: Number(rating),
           reviewTitle: title,
           reviewContent: content,
@@ -76,7 +81,7 @@ export default function ReviewForm({ menuId, onSuccess }) {
     }
   };
 
-  // 접근성: 키보드로도 별점을 바꿀 수 있게
+  // 키보드 접근성
   const onKeyDownStar = (e, value) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -99,12 +104,7 @@ export default function ReviewForm({ menuId, onSuccess }) {
       {/* 별점 */}
       <div className="mb-2">
         <label className="form-label d-block">평점</label>
-        <div
-          className="star-row"
-          role="radiogroup"
-          aria-label="별점 선택"
-          aria-describedby="ratingHelp"
-        >
+        <div className="star-row" role="radiogroup" aria-label="별점 선택">
           {[1, 2, 3, 4, 5].map((n) => {
             const active = (hover || rating) >= n;
             return (
@@ -119,6 +119,7 @@ export default function ReviewForm({ menuId, onSuccess }) {
                 onClick={() => setRating(n)}
                 onKeyDown={(e) => onKeyDownStar(e, n)}
                 title={`${n}점`}
+                style={{ cursor: "pointer", fontSize: 22, lineHeight: 1 }}
               >
                 ★
               </span>
@@ -143,7 +144,7 @@ export default function ReviewForm({ menuId, onSuccess }) {
         <textarea
           className="form-control"
           rows={4}
-          placeholder="사용 소감/장단점 등"
+          placeholder="내용을 입력해주세요"
           value={content}
           onChange={(e) => setContent(e.target.value)}
         />

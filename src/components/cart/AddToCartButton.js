@@ -56,7 +56,7 @@ export default function AddToCartButton({ menuId, quantity = 1, compact = false 
       type="button"
       onClick={onClick}
       disabled={loading}
-      className="btn btn-outline-primary same-style"
+      className="btn btn-outline-dark same-style"
       title="장바구니 담기"
     >
       <span role="img" aria-label="cart">🛒</span>

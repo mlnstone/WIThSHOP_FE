@@ -157,6 +157,7 @@ export default function CartPage() {
       const itemsPayload = selectedItems.map((it) => ({
         menuId: it.menuId,
         quantity: it.qty,
+        menuName: it.name,
       }));
 
       await payNow(null, 0, {

@@ -1,3 +1,4 @@
+/* Header.css */
 /* 공통 */
 a { text-decoration: none; color: inherit; }
 
@@ -87,6 +88,66 @@ a { text-decoration: none; color: inherit; }
 
 
 
+/* 이름 텍스트(버튼 아님) */
+.hello-text {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: 14px;
+  color: #343a40;            /* 두 번째 스샷 느낌 */
+  cursor: default;
+  user-select: none;
+}
+
+/* ‘관리자’ 배지 (둥글고 회색) */
+.hello-text .badge {
+  background: #6c757d;
+  color: #fff;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* 프로필 메뉴 컨테이너 */
+.profile-menu {
+  position: relative;
+}
+
+/* 드롭다운 기본 숨김 */
+.profile-menu .dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100%);
+  min-width: 160px;
+  padding: 8px 0;
+  margin: 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.08);
+  display: none;
+  z-index: 2000;
+}
+
+/* hover/focus-within 시 열림 (마우스 올리기/탭 접근 모두 케어) */
+.profile-menu:hover .dropdown-menu,
+.profile-menu:focus-within .dropdown-menu {
+  display: block;
+}
+
+/* 드롭다운 아이템 */
+.profile-menu .dropdown-menu li a {
+  display: block;
+  padding: 10px 12px;
+  color: #212529;
+  text-decoration: none;
+  font-size: 14px;
+}
+.profile-menu .dropdown-menu li a:hover {
+  background: #f6f7f9;
+}
 
 
 /* ===== 모바일: 가로 슬라이드 탭 ===== */
@@ -127,4 +188,3 @@ a { text-decoration: none; color: inherit; }
     background: linear-gradient(to left, rgba(255,255,255,1), rgba(255,255,255,0));
   }
 }
-

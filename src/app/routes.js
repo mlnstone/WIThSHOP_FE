@@ -14,8 +14,11 @@ import ProfileSetupPage from "../pages/auth/ProfileSetupPage";
 import ProfileGate from "./ProfileGate";
 import CartPage from "../pages/menu/CartPage";
 import MenuDetailPage from "../pages/menu/MenuDetailPage";
-import BenefitsPage from "../pages/checkout/BenefitsPage";
+import BenefitsPage from "../pages/checkout/CheckoutPage";
 import OrderDetailPage from "../pages/order/OrderDetailPage";
+import MyOrdersPage from "../pages/order/MyOrdersPage";
+import ReviewWritePage from "../pages/reviews/ReviewWritePage";
+import MyReviewsPage from "../pages/reviews/MyReviewsPage";
 
 function hasToken() {
   return !!localStorage.getItem("accessToken");
@@ -49,7 +52,7 @@ export default function AppRoutes({ user, onLogout }) {
       />
 
       <Route
-        path="/orders/:orderCode"
+        path="/orders/code/:orderCode"
         element={
           <AuthOnly>
             <ProfileGate>
@@ -106,11 +109,31 @@ export default function AppRoutes({ user, onLogout }) {
           </AuthOnly>
         }
       />
+      <Route
+        path="/me/orders"
+        element={
+          <AuthOnly>
+            <ProfileGate>
+              <MyOrdersPage />
+            </ProfileGate>
+          </AuthOnly>
+        }
+      />
 
       <Route path="/profile-setup" element={<ProfileSetupPage />} />
       <Route path="/menus/:menuId" element={<MenuDetailPage />} />
 
-      {/* ✅ 혜택 선택 페이지는 로그인 필요 */}
+      <Route path="/reviews/write" element={<ReviewWritePage />} />
+      <Route path="/me/reviews"
+        element={
+          <AuthOnly>
+            <ProfileGate>
+              <MyReviewsPage />
+            </ProfileGate>
+          </AuthOnly>
+        }
+      />
+      {/* ✅ 결제 페이지는 로그인 필요 */}
       <Route
         path="/checkout/benefits"
         element={

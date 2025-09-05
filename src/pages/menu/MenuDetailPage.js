@@ -4,17 +4,15 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import AddToCartButton from "../../components/cart/AddToCartButton";
 import BuyNowButton from "../../components/payment/BuyNowButton";
 import InstallmentInfo from "../../components/payment/InstallmentInfo";
+import Pagination from "../../components/common/Pagination";
 import "./MenuDetailPage.css";
 import { useMe } from "../../providers/MeProvider";
-// import { createOrder } from "../../services/order";
-// import { syncCartBadge } from "../../lib/syncCartBadge";
-// import { onBuyNow as payNow } from "../../components/payment/onBuyNow";
 
 function extractImages(menu) {
   if (Array.isArray(menu?.images) && menu.images.length) return menu.images;
   if (Array.isArray(menu?.imageList) && menu.imageList.length) return menu.imageList;
   if (typeof menu?.imageUrls === "string" && menu.imageUrls.trim()) {
-    return menu.imageUrls.split(",").map(s => s.trim()).filter(Boolean);
+    return menu.imageUrls.split(",").map((s) => s.trim()).filter(Boolean);
   }
   if (menu?.image) return [menu.image];
   return ["https://via.placeholder.com/960x640?text=No+Image"];
@@ -41,7 +39,8 @@ export default function MenuDetailPage() {
   const [reviewPage, setReviewPage] = useState(0);
   const [reviewSize, setReviewSize] = useState(5);
   const [reviewPageData, setReviewPageData] = useState({
-    number: 0, totalPages: 1, first: true, last: true,
+    number: 0,
+    totalPages: 1,
   });
 
   // 배송/할부
@@ -50,32 +49,16 @@ export default function MenuDetailPage() {
 
   const images = useMemo(() => extractImages(menu), [menu]);
   const [idx, setIdx] = useState(0);
-  const go = (d) => setIdx(i => (i + d + images.length) % images.length);
+  const go = (d) => setIdx((i) => (i + d + images.length) % images.length);
 
   // 금액
   const price = menu?.salePrice ?? menu?.price ?? 0;
   const compareAt = menu?.originalPrice ?? menu?.listPrice;
-  const discountPct = (typeof compareAt === "number" && compareAt > price)
-    ? Math.round(((compareAt - price) / compareAt) * 100)
-    : 0;
+  const discountPct =
+    typeof compareAt === "number" && compareAt > price
+      ? Math.round(((compareAt - price) / compareAt) * 100)
+      : 0;
   const subtotal = useMemo(() => price * qty, [price, qty]);
-
-  // 즉시 결제(원래 동작)
-  // const handleBuyNow = async () => {
-  //   if (!me) { navigate("/login"); return; }
-  //   await payNow(menu, qty, {
-  //     navigate,
-  //     createOrder,
-  //     syncCartBadge,
-  //     user: {
-  //       userEmail: me.userEmail,
-  //       userName: me.userName,
-  //       phone: me.phone,
-  //     },
-  //     prepareByItems: true,
-  //     items: [{ menuId: menu.menuId, quantity: qty }],
-  //   });
-  // };
 
   // 메뉴 로드
   useEffect(() => {
@@ -85,7 +68,10 @@ export default function MenuDetailPage() {
         setMenuLoading(true);
         const r = await fetch(`/menus/${menuId}`);
         const j = await r.json().catch(() => null);
-        if (!r.ok) { setErr(j?.message || "상품을 불러오지 못했습니다."); return; }
+        if (!r.ok) {
+          setErr(j?.message || "상품을 불러오지 못했습니다.");
+          return;
+        }
         alive && setMenu(j);
       } catch {
         setErr("네트워크 오류가 발생했습니다.");
@@ -93,7 +79,9 @@ export default function MenuDetailPage() {
         alive && setMenuLoading(false);
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [menuId]);
 
   // 리뷰 요약
@@ -105,25 +93,30 @@ export default function MenuDetailPage() {
       if (typeof j?.count === "number") setReviewCount(j.count);
       const avg = Number(j?.average);
       setAvgRating(Number.isFinite(avg) ? Number(avg.toFixed(2)) : null);
-    } catch { }
+    } catch {}
   }, [menuId]);
 
   // 리뷰 목록
-  const loadReviews = useCallback(async (page = reviewPage, size = reviewSize) => {
-    try {
-      const qs = new URLSearchParams({ page: String(page), size: String(size), sort: "createdAt,desc" });
-      const r = await fetch(`/menus/${menuId}/reviews?${qs.toString()}`);
-      const j = await r.json().catch(() => null);
-      if (!j) return;
-      if (Array.isArray(j.content)) setReviews(j.content);
-      setReviewPageData({
-        number: j.number ?? page,
-        totalPages: j.totalPages ?? 1,
-        first: j.first ?? page === 0,
-        last: j.last ?? true,
-      });
-    } catch { }
-  }, [menuId, reviewPage, reviewSize]);
+  const loadReviews = useCallback(
+    async (page = reviewPage, size = reviewSize) => {
+      try {
+        const qs = new URLSearchParams({
+          page: String(page),
+          size: String(size),
+          sort: "createdAt,desc",
+        });
+        const r = await fetch(`/menus/${menuId}/reviews?${qs.toString()}`);
+        const j = await r.json().catch(() => null);
+        if (!j) return;
+        if (Array.isArray(j.content)) setReviews(j.content);
+        setReviewPageData({
+          number: j.number ?? page,
+          totalPages: j.totalPages ?? 1,
+        });
+      } catch {}
+    },
+    [menuId, reviewPage, reviewSize]
+  );
 
   useEffect(() => {
     if (!menuId) return;
@@ -141,9 +134,11 @@ export default function MenuDetailPage() {
         if (!r.ok) return;
         const fee = await r.json().catch(() => null);
         alive && typeof fee === "number" && setShippingFee(fee);
-      } catch { }
+      } catch {}
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, []);
 
   // 로딩/에러
@@ -153,40 +148,51 @@ export default function MenuDetailPage() {
       <div className="container py-4">
         <div className="alert alert-danger d-flex justify-content-between align-items-center">
           <div>{err}</div>
-          <button className="btn btn-sm btn-outline-secondary" onClick={() => navigate(-1)}>뒤로</button>
+          <button className="btn btn-sm btn-outline-secondary" onClick={() => navigate(-1)}>
+            뒤로
+          </button>
         </div>
       </div>
     );
   }
   if (!menu) return null;
 
-  const { number, totalPages, first, last } = reviewPageData;
+  const { number, totalPages } = reviewPageData;
 
   const goReviewPage = (p) => {
     const next = Math.max(0, Math.min(totalPages - 1, p));
     setReviewPage(next);
     loadReviews(next, reviewSize);
-    window.scrollTo({ top: document.getElementById("reviews-section")?.offsetTop ?? 0, behavior: "smooth" });
+    window.scrollTo({
+      top: document.getElementById("reviews-section")?.offsetTop ?? 0,
+      behavior: "smooth",
+    });
   };
-
-  const blockSize = 5;
-  const currentBlock = Math.floor(number / blockSize);
-  const startPage = currentBlock * blockSize;
-  const endPage = Math.min(startPage + blockSize - 1, totalPages - 1);
 
   return (
     <div className="container py-4" style={{ maxWidth: 1160 }}>
       <nav className="mdp-breadcrumb">
-        <button className="text-link" onClick={() => navigate(location.state?.from || "/")}>Home</button>
-        <span>/</span><span className="fw-semibold">상품</span>
+        <button className="text-link" onClick={() => navigate(location.state?.from || "/")}>
+          Home
+        </button>
+        <span>/</span>
+        <span className="fw-semibold">상품</span>
       </nav>
 
       <div className="mdp-grid no-thumbs">
         {/* 이미지 영역 */}
         <div className="mdp-main">
-          {images.length > 1 && <button className="mdp-arrow left" onClick={() => go(-1)} aria-label="이전">‹</button>}
+          {images.length > 1 && (
+            <button className="mdp-arrow left" onClick={() => go(-1)} aria-label="이전">
+              ‹
+            </button>
+          )}
           <img src={images[idx]} alt={menu.menuName} />
-          {images.length > 1 && <button className="mdp-arrow right" onClick={() => go(+1)} aria-label="다음">›</button>}
+          {images.length > 1 && (
+            <button className="mdp-arrow right" onClick={() => go(+1)} aria-label="다음">
+              ›
+            </button>
+          )}
         </div>
 
         {/* 정보 영역 */}
@@ -194,7 +200,12 @@ export default function MenuDetailPage() {
           <div className="mdp-rating">
             <span className="star-icon" aria-hidden="true" />
             <span className="score">{avgRating != null ? avgRating.toFixed(1) : "–"}</span>
-            <button className="link" onClick={() => document.getElementById("reviews-section")?.scrollIntoView({ behavior: "smooth" })}>
+            <button
+              className="link"
+              onClick={() =>
+                document.getElementById("reviews-section")?.scrollIntoView({ behavior: "smooth" })
+              }
+            >
               리뷰 {reviewCount.toLocaleString()}건
             </button>
           </div>
@@ -210,9 +221,22 @@ export default function MenuDetailPage() {
           )}
 
           <dl className="mdp-meta">
-            <div><dt>배송방법</dt><dd>택배</dd></div>
-            <div><dt>배송비</dt><dd>{shippingFee.toLocaleString()}원</dd></div>
-            <div><dt>무이자 할부</dt><dd><button className="link" onClick={() => setOpenInstallment(true)}>카드 자세히 보기</button></dd></div>
+            <div>
+              <dt>배송방법</dt>
+              <dd>택배</dd>
+            </div>
+            <div>
+              <dt>배송비</dt>
+              <dd>{shippingFee.toLocaleString()}원</dd>
+            </div>
+            <div>
+              <dt>무이자 할부</dt>
+              <dd>
+                <button className="link" onClick={() => setOpenInstallment(true)}>
+                  카드 자세히 보기
+                </button>
+              </dd>
+            </div>
           </dl>
 
           {/* 좌측 정렬 · 세로 배치(수량만) */}
@@ -262,7 +286,8 @@ export default function MenuDetailPage() {
                 setReviewSize(s);
                 setReviewPage(0);
                 loadReviews(0, s);
-              }}>
+              }}
+            >
               <option value={5}>5</option>
               <option value={10}>10</option>
             </select>
@@ -271,7 +296,7 @@ export default function MenuDetailPage() {
 
         <div className="list-group mt-3 mb-3">
           {reviews.length === 0 && <div className="text-muted">아직 리뷰가 없습니다.</div>}
-          {reviews.map(rv => (
+          {reviews.map((rv) => (
             <div key={rv.reviewId} className="list-group-item">
               <div className="d-flex justify-content-between align-items-center">
                 <strong>{rv.reviewTitle}</strong>
@@ -286,32 +311,27 @@ export default function MenuDetailPage() {
               <div>{rv.reviewContent}</div>
               {rv.reviewImage && (
                 <div className="mt-2">
-                  <img src={rv.reviewImage} alt="review" style={{ maxWidth: 200, height: "auto", borderRadius: 8 }} />
+                  <img
+                    src={rv.reviewImage}
+                    alt="review"
+                    style={{ maxWidth: 200, height: "auto", borderRadius: 8 }}
+                  />
                 </div>
               )}
             </div>
           ))}
         </div>
 
-        <div className="d-flex gap-2 justify-content-center">
-          <button className="btn btn-outline-primary" disabled={first} onClick={() => goReviewPage(0)}>&laquo;</button>
-          <button className="btn btn-outline-primary" disabled={number === 0} onClick={() => goReviewPage(number - 1)}>&lt;</button>
-
-          {Array.from({ length: endPage - startPage + 1 }, (_, i) => {
-            const p = startPage + i;
-            return (
-              <button
-                key={p}
-                className={`btn ${p === number ? "btn-primary" : "btn-outline-primary"}`}
-                onClick={() => goReviewPage(p)}>
-                {p + 1}
-              </button>
-            );
-          })}
-
-          <button className="btn btn-outline-primary" disabled={number >= totalPages - 1} onClick={() => goReviewPage(number + 1)}>&gt;</button>
-          <button className="btn btn-outline-primary" disabled={last} onClick={() => goReviewPage(totalPages - 1)}>&raquo;</button>
-        </div>
+        {/* 공용 Pagination 적용 */}
+        <Pagination
+          page={number}
+          totalPages={totalPages}
+          blockSize={5}
+          onChange={goReviewPage}
+          variant="dark"  // 톤 통일: 'dark' | 'primary' | 'gray'
+          size="sm"
+          className="justify-content-center"
+        />
       </section>
 
       <InstallmentInfo open={openInstallment} onClose={() => setOpenInstallment(false)} />

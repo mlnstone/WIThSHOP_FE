@@ -28,7 +28,7 @@ async function ensureIamportLoaded() {
  *  - buyer: { email, name, tel, addr }
  *  - useDynamicScript: true면 SDK 동적 로드
  *  - prepareByItems: true 면 /prepare-by-items 사용
- *  - items: [{ menuId, quantity }]
+ *  - items: [{ menuId, quantity, menuName? }]
  *  - userCouponId: string | null
  *  - usePoints: number
  *
@@ -86,18 +86,12 @@ export async function onBuyNow(menu, qty, options = {}) {
 
     if (prepareByItems) {
       // 쿠폰/포인트/배송비 포함 사전검증
-      const payload = {
-        items:
-          Array.isArray(items) && items.length > 0
-            ? items
-            : menu && qty
-            ? [{ menuId: menu.menuId, quantity: qty }]
-            : [],
-        userCouponId: userCouponId || null,
-        usePoints: Math.max(0, Number(usePoints) || 0),
-      };
+      const itemsForPrepare =
+        Array.isArray(items) && items.length
+          ? items
+          : (menu && qty ? [{ menuId: menu.menuId, quantity: qty, menuName: menu.menuName }] : []);
 
-      if (!payload.items.length) {
+      if (!itemsForPrepare.length) {
         alert("결제할 상품이 없습니다.");
         return false;
       }
@@ -108,7 +102,16 @@ export async function onBuyNow(menu, qty, options = {}) {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          items: itemsForPrepare.map(it => ({
+            menuId: it.menuId,
+            quantity: it.quantity,
+            // menuName은 서버에 꼭 전달할 필요는 없지만, 보내도 무방
+            menuName: it.menuName,
+          })),
+          userCouponId: userCouponId || null,
+          usePoints: Math.max(0, Number(usePoints) || 0),
+        }),
       });
 
       if (!prepRes.ok) {
@@ -117,11 +120,11 @@ export async function onBuyNow(menu, qty, options = {}) {
         return false;
       }
 
-      prep = await prepRes.json();
+      prep = await prepRes.json(); // 서버가 금액/배송/할인 등을 계산하여 반환
       merchant_uid = prep.merchant_uid;
       amount = prep.amount;
     } else {
-      // 기존 단순 사전검증
+      // 기존 단순 사전검증 (수량만)
       const prepRes = await fetch(`${backend}/api/payments/prepare`, {
         method: "POST",
         headers: {
@@ -150,15 +153,39 @@ export async function onBuyNow(menu, qty, options = {}) {
     const IMP = window.IMP;
     IMP.init(impCode);
 
-    const payTitle = (() => {
-      if (!prepareByItems) {
-        return `${menu?.menuName ?? "상품"} x ${qty}`;
-      }
-      const count = Array.isArray(items) ? items.length : 0;
-      if (count <= 0) return "장바구니 결제";
-      if (count === 1) return `장바구니: ${items[0].menuId}`;
-      return `장바구니 ${count}건`;
-    })();
+    // --- 결제 제목 생성 (단건/장바구니 공통 처리) ---
+    // --- 결제 제목 생성 (단건/장바구니 공통 처리) ---
+const payTitle = (() => {
+  // 결제 대상 목록 정규화
+  const list = Array.isArray(items) && items.length
+    ? items
+    : (menu && qty ? [{ menuId: menu.menuId, quantity: qty, menuName: menu.menuName }] : []);
+
+  const count = list.length;
+  if (count <= 0) return "장바구니 결제";
+
+  // 첫 아이템
+  const first = list[0] || {};
+  // prepare-by-items 응답에 items가 있다면 거기서도 이름 후보를 가져옴
+  const prepFirst = (prep && Array.isArray(prep.items) && prep.items[0]) ? prep.items[0] : null;
+
+  // 이름 우선순위: items[0].menuName -> items[0].name -> prep.items[0].menuName/name -> menu.menuName -> '상품 {menuId}'
+  const firstName =
+    first.menuName ||
+    first.name ||
+    (prepFirst && (prepFirst.menuName || prepFirst.name)) ||
+    (menu && menu.menuName) ||
+    (first.menuId ? `상품 ${first.menuId}` : "상품");
+
+  // 수량(단건일 때만 붙임)
+  const firstQty = first.quantity ?? 1;
+
+  if (count === 1) {
+    return `${firstName} x ${firstQty}`;
+  }
+  // 2개 이상이면: "첫번째메뉴 외 (건수-1)건"
+  return `${firstName} 외 ${count - 1}건`;
+})();
 
     const payOk = await new Promise((resolve) => {
       IMP.request_pay(
@@ -208,9 +235,9 @@ export async function onBuyNow(menu, qty, options = {}) {
     // 4) 주문 생성
     if (typeof createOrder === "function") {
       const orderItems = prepareByItems
-        ? Array.isArray(items) && items.length
-          ? items
-          : [{ menuId: menu.menuId, quantity: qty }]
+        ? (Array.isArray(items) && items.length
+            ? items
+            : [{ menuId: menu.menuId, quantity: qty }])
         : [{ menuId: menu.menuId, quantity: qty }];
 
       const extras =
@@ -224,7 +251,12 @@ export async function onBuyNow(menu, qty, options = {}) {
             }
           : {};
 
-      const res = await createOrder(orderItems, extras);
+      const res = await createOrder(
+        // 주문생성 API는 최소필드만 전달
+        orderItems.map(it => ({ menuId: it.menuId, quantity: it.quantity })),
+        extras
+      );
+
       if (!res?.ok) {
         alert(res?.data?.message || "주문 생성 실패");
         return false;

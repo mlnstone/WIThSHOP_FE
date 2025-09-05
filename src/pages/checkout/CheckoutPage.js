@@ -243,7 +243,7 @@ export default function BenefitsPage() {
       <button className="btn btn-link px-0 mb-3" onClick={() => navigate(-1)}>
         ← 뒤로
       </button>
-      <h3 className="mb-3">혜택 선택</h3>
+      <h3 className="mb-3">결제 페이지</h3>
 
       <div className="mb-3 p-3 border rounded-3">
         <div className="fw-semibold mb-1">{menu.menuName}</div>
@@ -312,7 +312,7 @@ export default function BenefitsPage() {
 
       <div className="d-flex gap-2">
         <button className="btn btn-outline-secondary" onClick={() => navigate(-1)}>
-          장바구니로
+          이전으로
         </button>
         <button
           className="btn btn-dark flex-grow-1"

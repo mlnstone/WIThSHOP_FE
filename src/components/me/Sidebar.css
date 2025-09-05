@@ -1,0 +1,30 @@
+/* me/Sidebar.css */
+.my-sidebar {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* 기본 아이템 */
+.my-sidebar .list-group-item.my-link {
+    border: 0;
+    padding: 12px 14px;
+    color: #333;
+    text-decoration: none;
+    display: block;
+    background: #fff;
+}
+
+/* hover */
+.my-sidebar .list-group-item.my-link:hover {
+    background: #f5f7fb;
+    color: #111;
+    font-weight: 600;
+}
+
+/* active (Bootstrap 기본값 덮어쓰기) */
+.my-sidebar .list-group-item.my-link.active {
+    background: #f5f7fb !important;
+    color: #222 !important;
+    font-weight: 600;
+    border-color: transparent;
+}

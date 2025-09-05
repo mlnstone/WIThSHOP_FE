@@ -89,6 +89,8 @@
     font-size: 0.95rem;
   }
 .star-icon{--s:18px;display:inline-block;width:var(--s);height:var(--s);background:#f7b500;-webkit-mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23000" d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>') center/contain no-repeat;mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23000" d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>') center/contain no-repeat}
+
+.star-icon.empty {background: #d0d0d0; /* 회색 별 */}
 /* 상단 요약 별 크기 살짝 크게 */
 .mdp-rating .star-icon{--s:20px;margin-right:2px}
 /* 숫자와 나란히 보이게 */

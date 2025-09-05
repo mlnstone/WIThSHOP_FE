@@ -11,3 +11,59 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+/* 링크처럼 보이는 액션 버튼 */
+.action-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-size: 0.95rem;   /* 날짜와 거의 비슷한 크기 */
+  font-weight: 400;     /* 굵기 제거 */
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.action-link:hover:not(:disabled),
+.action-link:focus-visible:not(:disabled) {
+  text-decoration-thickness: 2px;
+  outline: none;
+}
+.action-link:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  text-decoration-style: dotted;
+}
+
+/* 상단 표 헤더 느낌 */
+.board-table thead th {
+  background: #f6f7f9;
+  border-bottom: 0;
+  font-weight: 600;
+  color: #444;
+}
+
+/* 행 구분선 */
+.board-table tbody tr {
+  border-top: 1px solid #eee;
+}
+.board-table tbody tr.is-notice {
+  background: #fff;           /* 공지 행은 흰 바탕 유지 */
+  border-top: 2px solid #f0f0f0;
+}
+
+/* 제목 링크 */
+.board-link {
+  color: #222;
+  text-decoration: none;
+}
+.board-link:hover {
+  text-decoration: underline;
+}
+
+/* 셀 패딩/정렬 */
+.board-table td, .board-table th {
+  vertical-align: middle;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
