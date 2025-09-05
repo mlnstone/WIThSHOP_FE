@@ -121,15 +121,34 @@ export default function BoardListPage() {
 
       {/* breadcrumb */}
       <div className="d-flex justify-content-end small mb-2">
-        <span className="text-muted">Home / </span>
-        <strong className="ms-1 text-dark">{title}</strong>
-      </div>
+  <Link to="/" className="text-muted text-decoration-none">Home</Link>
+  <span className="mx-1">/</span>
+  <strong className="ms-1 text-dark">{title}</strong>
+</div>
 
       {/* 타이틀 */}
       <h2 className="text-center fw-bold mb-4">{title}</h2>
 
       {/* 타입 탭 */}
       <div className="d-flex justify-content-center gap-2 flex-wrap mb-4">
+        {/* 전체 버튼 – typeId 해제 */}
+        <button
+          type="button"
+          aria-pressed={!typeId}
+          className={`btn btn-sm rounded-pill px-4 ${!typeId ? "btn-dark" : "btn-outline-dark"}`}
+          onClick={() =>
+            setSearchParams({
+              page: "0",
+              sort,
+              ...(search ? { search } : {}), // 검색어는 유지
+              // ⛔ typeId는 의도적으로 넣지 않음 → 전체 보기
+            })
+          }
+        >
+          전체
+        </button>
+
+        {/* 각 게시판 타입 버튼 */}
         {boardTypes.map((bt) => {
           const id = String(bt.boardTypeId);
           const name = bt.boardTypeName ?? bt.name ?? id;
@@ -137,6 +156,8 @@ export default function BoardListPage() {
           return (
             <button
               key={id}
+              type="button"
+              aria-pressed={active}
               className={`btn btn-sm rounded-pill px-4 ${active ? "btn-dark" : "btn-outline-dark"}`}
               onClick={() =>
                 setSearchParams({
@@ -151,6 +172,7 @@ export default function BoardListPage() {
             </button>
           );
         })}
+
         {me?.role === "ADMIN" && (
           <Link to={writeLink} className="btn btn-success btn-sm rounded-pill px-4 ms-2">
             글쓰기

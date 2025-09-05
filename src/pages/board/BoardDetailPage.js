@@ -27,11 +27,18 @@ export default function BoardDetailPage() {
         <h3 className="m-0">{data.boardTitle}</h3>
         <Link to="/board" className="btn btn-outline-secondary btn-sm">← 목록</Link>
       </div>
-      <div className="text-muted small mb-3">
-  {data.boardTypeTitle} · 조회수 {data.hit ?? 0} · {data.createdAt 
-    ? data.createdAt.replace("T", " ").slice(0, 16) 
-    : ""}
-</div>
+  
+      {/* 타입 · 작성일 · 조회수 (오른쪽 정렬) */}
+      <div className="d-flex justify-content-between text-muted small mb-3">
+        <div>
+          {data.boardTypeTitle}
+          {data.createdAt && (
+            <> · {data.createdAt.replace("T", " ").slice(0, 16)}</>
+          )}
+        </div>
+        <div>조회수 {data.hit ?? 0}</div>
+      </div>
+  
       <div className="border rounded p-3" style={{ whiteSpace: "pre-wrap" }}>
         {data.boardContent}
       </div>
