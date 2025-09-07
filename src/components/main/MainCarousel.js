@@ -18,7 +18,11 @@ export default function MainCarousel() {
     accessibility: false,
   };
 
-  const images = ["/images/banner1.jpg", "/images/banner2.jpg", "/images/banner3.jpg"];
+  const images = [
+    "https://i.namu.wiki/i/r8272oYH3BGODl2Tc2pw80HakUDSHwCBzG7yQiKZuGq06CFw4NASVgXn7QWOIZQGigvFsR_wNLguNK0efreU9-q1rEVzahLfPbwGkDLFQ8MomuCG3qyUTGY0mflRg3nEmm4ZAT44TVMzLufxTrRYbw.webp",
+    "https://i.namu.wiki/i/7qOBsy38ICHZTDQM2htYTwRKIRcNJjUoXTHEQPSTjcHSM6q-9wjtjZ-6nNeRgapmZdkFGwkp6XMm4DdTuZS3Qt7OtJxNMWwegYo0OK5x6LNe5DrUDyLZCiLDpZ4sr-ydy__Gg0I_HIexZH8PwjFKYw.webp",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcREBqw6THa8LdmE6UqC92pyYfYyaBxXENxjGg&s"
+  ];
 
   return (
     // 화면 전체폭으로 빼기
