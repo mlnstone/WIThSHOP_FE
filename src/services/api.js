@@ -10,7 +10,6 @@ async function refreshAccessToken() {
   if (isRefreshing) {
     return new Promise((resolve, reject) => refreshWaiters.push({ resolve, reject }));
   }
-
   isRefreshing = true;
   const refreshToken = localStorage.getItem("refreshToken");
 
@@ -21,17 +20,11 @@ async function refreshAccessToken() {
       method: "POST",
       headers: { Authorization: `Bearer ${refreshToken}` },
     });
-
     if (!res.ok) throw new Error(`refresh failed: ${res.status}`);
 
     const data = await res.json(); // { grantType, accessToken, refreshToken }
-
-    if (data?.accessToken) {
-      localStorage.setItem("accessToken", data.accessToken);
-    }
-    if (data?.refreshToken) {
-      localStorage.setItem("refreshToken", data.refreshToken);
-    }
+    if (data?.accessToken) localStorage.setItem("accessToken", data.accessToken);
+    if (data?.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
 
     refreshWaiters.forEach((w) => w.resolve(true));
     refreshWaiters = [];
@@ -45,9 +38,20 @@ async function refreshAccessToken() {
   }
 }
 
+function getSafeBackPath() {
+  const here = new URL(window.location.href);
+  here.searchParams.delete("from");
+  return here.pathname + (here.search ? here.search : "");
+}
+
 export async function apiFetch(path, options = {}, _triedOnce = false) {
   const { headers = {}, ...rest } = options;
   const url = path.startsWith("http") ? path : `${BACKEND}${path}`;
+
+  // 토큰 보유 여부(Authorization 헤더 또는 localStorage 토큰)
+  const lcToken = localStorage.getItem("accessToken");
+  const hdrAuth = Object.keys(headers).some((k) => k.toLowerCase() === "authorization");
+  const hasAuth = !!(lcToken || hdrAuth);
 
   const res = await fetch(url, {
     headers: {
@@ -57,8 +61,8 @@ export async function apiFetch(path, options = {}, _triedOnce = false) {
     ...rest,
   });
 
-  // 401/403 → 1회에 한해 리프레시 → 원 요청 재시도
-  if ((res.status === 401 || res.status === 403) && !_triedOnce) {
+  // ✅ 토큰이 있을 때만(로그인 상태일 때만) 401/403 처리
+  if (hasAuth && (res.status === 401 || res.status === 403) && !_triedOnce) {
     const ok = await refreshAccessToken();
     if (ok) {
       const token = localStorage.getItem("accessToken");
@@ -66,8 +70,8 @@ export async function apiFetch(path, options = {}, _triedOnce = false) {
       if (token) retryHeaders.Authorization = `Bearer ${token}`;
       return apiFetch(path, { ...options, headers: retryHeaders }, true);
     } else {
-      const from = encodeURIComponent(window.location.pathname + window.location.search);
-      signOut(`/login?from=${from}`);
+      const back = getSafeBackPath();
+      signOut(back); // from 중첩 없이 한 번만
       return { ok: false, status: res.status, data: null };
     }
   }
