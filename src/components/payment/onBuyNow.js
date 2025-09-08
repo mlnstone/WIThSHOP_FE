@@ -267,7 +267,7 @@ const payTitle = (() => {
       }
 
       if (typeof navigate === "function") {
-        navigate(`/orders/${res.data.orderCode}`);
+        navigate(`/orders/code/${res.data.orderCode}`);
       }
     }
 

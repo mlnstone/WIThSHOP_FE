@@ -5,6 +5,7 @@ import { onBuyNow as payNow } from "../../components/payment/onBuyNow";
 import { createOrder } from "../../services/order";
 import { syncCartBadge } from "../../lib/syncCartBadge";
 import { useMe } from "../../providers/MeProvider";
+import { apiFetch, authHeaders } from "../../services/api";
 
 function useQuery() {
   const { search } = useLocation();
@@ -25,7 +26,7 @@ export default function BenefitsPage() {
 
   // 혜택 상태
   const [pointBalance, setPointBalance] = useState(0);
-  const [usePoints, setUsePoints] = useState(0); // 사용자가 입력한 원시 값
+  const [usePoints, setUsePoints] = useState(0);
   const [myCoupons, setMyCoupons] = useState([]);
   const [selectedCouponId, setSelectedCouponId] = useState("");
   const [couponPreview, setCouponPreview] = useState(0);
@@ -33,57 +34,52 @@ export default function BenefitsPage() {
   // UI 에러
   const [pointError, setPointError] = useState("");
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("accessToken") || "";
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  };
+  const getAuth = () => authHeaders();
 
   // 메뉴/배송비
   useEffect(() => {
     if (!menuId) return;
     let alive = true;
+
     (async () => {
       try {
-        const r1 = await fetch(`/menus/${menuId}`);
-        const j1 = await r1.json().catch(() => null);
-        if (alive && r1.ok) setMenu(j1);
+        const r1 = await apiFetch(`/menus/${menuId}`);
+        if (alive && r1.ok) setMenu(r1.data || null);
 
-        const r2 = await fetch(`/config/shipping-fee`);
-        const j2 = await r2.json().catch(() => null);
-        if (alive && r2.ok && typeof j2 === "number") setShippingFee(j2);
-      } catch {}
+        const r2 = await apiFetch(`/config/shipping-fee`);
+        if (alive && r2.ok && typeof r2.data === "number") setShippingFee(r2.data);
+      } catch {
+        /* ignore */
+      }
     })();
-    return () => {
-      alive = false;
-    };
+
+    return () => { alive = false; };
   }, [menuId]);
 
   // 내 쿠폰/포인트
   useEffect(() => {
     if (!me) return;
     let alive = true;
+
     (async () => {
       try {
-        const headers = { Accept: "application/json", ...getAuthHeaders() };
+        const headers = { Accept: "application/json", ...getAuth() };
 
-        const rp = await fetch(`/points`, { headers });
-        if (rp.ok) {
-          const jp = await rp.json().catch(() => null);
-          if (alive && jp && typeof jp.balance === "number") {
-            setPointBalance(jp.balance);
-          }
+        const rp = await apiFetch(`/points`, { headers });
+        if (alive && rp.ok && rp.data && typeof rp.data.balance === "number") {
+          setPointBalance(rp.data.balance);
         }
 
-        const rc = await fetch(`/coupons`, { headers });
-        if (rc.ok) {
-          const jc = await rc.json().catch(() => null);
-          if (alive && Array.isArray(jc)) setMyCoupons(jc);
+        const rc = await apiFetch(`/coupons`, { headers });
+        if (alive && rc.ok && Array.isArray(rc.data)) {
+          setMyCoupons(rc.data);
         }
-      } catch {}
+      } catch {
+        /* ignore */
+      }
     })();
-    return () => {
-      alive = false;
-    };
+
+    return () => { alive = false; };
   }, [me]);
 
   // 금액 관련
@@ -97,10 +93,11 @@ export default function BenefitsPage() {
       return;
     }
     let alive = true;
+
     (async () => {
       try {
-        const headers = { Accept: "application/json", ...getAuthHeaders() };
-        const r = await fetch(
+        const headers = { Accept: "application/json", ...getAuth() };
+        const r = await apiFetch(
           `/coupons/${selectedCouponId}/preview?orderAmount=${subtotal}`,
           { headers }
         );
@@ -108,7 +105,7 @@ export default function BenefitsPage() {
           setCouponPreview(0);
           return;
         }
-        const j = await r.json().catch(() => null);
+        const j = r.data;
         if (alive && j && typeof j.discountApplied === "number") {
           setCouponPreview(j.discountApplied);
         }
@@ -116,38 +113,30 @@ export default function BenefitsPage() {
         setCouponPreview(0);
       }
     })();
-    return () => {
-      alive = false;
-    };
+
+    return () => { alive = false; };
   }, [me, selectedCouponId, subtotal]);
 
   // 쿠폰 라벨
   const couponLabel = (c) => {
-    const name =
-      c?.couponName ?? c?.name ?? c?.coupon?.couponName ?? "쿠폰";
+    const name = c?.couponName ?? c?.name ?? c?.coupon?.couponName ?? "쿠폰";
     const code = c?.code ?? c?.coupon?.code;
     const type = c?.discountType ?? c?.coupon?.discountType;
     const discount = c?.discount ?? c?.coupon?.discount;
-    const badge =
-      type === "PERCENT"
-        ? `${discount}%`
-        : `${(discount ?? 0).toLocaleString()}원`;
+    const badge = type === "PERCENT"
+      ? `${discount}%`
+      : `${(discount ?? 0).toLocaleString()}원`;
     return `${name}${code ? `(${code})` : ""} - ${badge}`;
   };
 
-  // 최대 사용 가능 포인트 (쿠폰 적용 후 남은 결제금액 한도 + 보유 한도)
+  // 최대 사용 가능 포인트
   const maxUsablePoints = useMemo(
-    () =>
-      Math.min(
-        pointBalance,
-        Math.max(0, subtotal - (couponPreview || 0))
-      ),
+    () => Math.min(pointBalance, Math.max(0, subtotal - (couponPreview || 0))),
     [pointBalance, subtotal, couponPreview]
   );
 
-  // 입력값이 한도를 넘으면 에러/경고, 포커스 아웃 또는 한도 변경 시 자동 보정
+  // 입력값 한도 보정
   useEffect(() => {
-    // 쿠폰/가격/보유 변경으로 max가 줄어들면 자동 감소
     if ((Number(usePoints) || 0) > maxUsablePoints) {
       setUsePoints(maxUsablePoints);
       setPointError(
@@ -170,9 +159,7 @@ export default function BenefitsPage() {
     setUsePoints(raw);
 
     if (raw > maxUsablePoints) {
-      setPointError(
-        `최대 ${maxUsablePoints.toLocaleString()}P 까지 사용 가능합니다.`
-      );
+      setPointError(`최대 ${maxUsablePoints.toLocaleString()}P 까지 사용 가능합니다.`);
     } else {
       setPointError("");
     }
@@ -181,27 +168,17 @@ export default function BenefitsPage() {
   const onBlurPoints = (e) => {
     const raw = normalizeInt(e.target.value);
     const clamped = Math.min(raw, maxUsablePoints);
-    if (clamped !== raw) {
-      setUsePoints(clamped);
-    }
+    if (clamped !== raw) setUsePoints(clamped);
     if (clamped > maxUsablePoints) {
-      setPointError(
-        `최대 ${maxUsablePoints.toLocaleString()}P 까지 사용 가능합니다.`
-      );
+      setPointError(`최대 ${maxUsablePoints.toLocaleString()}P 까지 사용 가능합니다.`);
     } else {
       setPointError("");
     }
   };
 
-  // 실제 계산에 쓰이는 값(항상 안전)
-  const expectedPoints = Math.min(
-    Math.max(0, Number(usePoints) || 0),
-    maxUsablePoints
-  );
-  const expectedPay = Math.max(
-    0,
-    subtotal - (couponPreview || 0) - expectedPoints + shippingFee
-  );
+  // 실제 계산에 쓰이는 값
+  const expectedPoints = Math.min(Math.max(0, Number(usePoints) || 0), maxUsablePoints);
+  const expectedPay = Math.max(0, subtotal - (couponPreview || 0) - expectedPoints + shippingFee);
 
   const handlePay = useCallback(async () => {
     if (!me) {
@@ -209,7 +186,6 @@ export default function BenefitsPage() {
       return;
     }
 
-    // 서버로 보내는 최종 안전값
     const safeUsePoints = expectedPoints;
 
     await payNow(menu, qty, {
@@ -227,14 +203,7 @@ export default function BenefitsPage() {
       usePoints: safeUsePoints,
       useDynamicScript: true,
     });
-  }, [
-    me,
-    menu,
-    qty,
-    selectedCouponId,
-    expectedPoints,
-    navigate,
-  ]);
+  }, [me, menu, qty, selectedCouponId, expectedPoints, navigate]);
 
   if (meLoading || !menu) return <div className="container py-4">불러오는 중...</div>;
 
@@ -289,8 +258,7 @@ export default function BenefitsPage() {
         />
         {!pointError ? (
           <div className="form-text">
-            보유 {pointBalance.toLocaleString()}P · 최대{" "}
-            {maxUsablePoints.toLocaleString()}P
+            보유 {pointBalance.toLocaleString()}P · 최대 {maxUsablePoints.toLocaleString()}P
           </div>
         ) : (
           <div className="invalid-feedback d-block">{pointError}</div>

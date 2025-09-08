@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import MySidebar from "../../components/me/Sidebar";
 import Pagination from "../../components/common/Pagination";
-import { authHeaders } from "../../services/api";
+import { apiFetch, authHeaders } from "../../services/api";
 
 export default function MyReviewsPage() {
   const [sp, setSp] = useSearchParams();
@@ -26,14 +26,15 @@ export default function MyReviewsPage() {
       setLoading(true);
       setErr("");
       const qs = new URLSearchParams({ page, size, sort: "createdAt,desc" });
-      const r = await fetch(`/me/reviews?${qs.toString()}`, { headers: authHeaders() });
-      const j = await r.json().catch(() => null);
-      if (!r.ok) {
-        setErr(j?.message || "리뷰를 불러오지 못했어요.");
+      const { ok, data } = await apiFetch(`/me/reviews?${qs.toString()}`, {
+        headers: authHeaders(),
+      });
+      if (!ok) {
+        setErr((data && (data.message || data.error)) || "리뷰를 불러오지 못했어요.");
         setData(null);
         return;
       }
-      setData(j);
+      setData(data || null);
     } catch {
       setErr("네트워크 오류");
       setData(null);
@@ -113,7 +114,7 @@ export default function MyReviewsPage() {
     }
 
     try {
-      const r = await fetch(`/me/reviews/${reviewId}`, {
+      const { ok, data } = await apiFetch(`/me/reviews/${reviewId}`, {
         method: "PATCH",
         headers: { ...authHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -123,9 +124,8 @@ export default function MyReviewsPage() {
           reviewImage: reviewImage || null,
         }),
       });
-      const j = await r.json().catch(() => null);
-      if (!r.ok) {
-        alert(j?.message || "수정에 실패했습니다.");
+      if (!ok) {
+        alert((data && (data.message || data.error)) || "수정에 실패했습니다.");
         return;
       }
       alert("수정되었습니다.");
@@ -145,13 +145,12 @@ export default function MyReviewsPage() {
     if (!window.confirm("정말 삭제하시겠습니까?")) return;
 
     try {
-      const r = await fetch(`/me/reviews/${rv.reviewId}`, {
+      const { ok, data } = await apiFetch(`/me/reviews/${rv.reviewId}`, {
         method: "DELETE",
         headers: authHeaders(),
       });
-      if (!r.ok) {
-        const j = await r.json().catch(() => null);
-        alert(j?.message || "삭제에 실패했습니다.");
+      if (!ok) {
+        alert((data && (data.message || data.error)) || "삭제에 실패했습니다.");
         return;
       }
       alert("삭제되었습니다.");
@@ -186,14 +185,12 @@ export default function MyReviewsPage() {
 
                     return (
                       <React.Fragment key={rv.reviewId}>
-                        {/* 1행: 번호(rowspan=3) / 이미지 / 메뉴명 / 평점 / 작성일 / 액션 */}
+                        {/* 1행 */}
                         <tr key={`${rv.reviewId}-head`}>
-                          {/* 번호: 3행 통합 */}
                           <td rowSpan={3} style={{ width: 70 }} className="text-center align-top">
                             {rowNoBase + idx + 1}
                           </td>
 
-                          {/* 이미지 */}
                           <td style={{ width: 72 }} className="text-center">
                             <Link to={`/menus/${rv.menuId}#reviews`} style={{ display: "inline-block" }}>
                               <img
@@ -205,24 +202,20 @@ export default function MyReviewsPage() {
                             </Link>
                           </td>
 
-                          {/* 메뉴명 */}
                           <td className="text-center">
                             <div className="fw-semibold">
                               <Link to={`/menus/${rv.menuId}`}>{rv.menuName}</Link>
                             </div>
                           </td>
 
-                          {/* 평점 */}
                           <td style={{ width: 150 }} className="text-center">
                             {renderStars(rv.rating)}
                           </td>
 
-                          {/* 작성일 */}
                           <td style={{ width: 180 }} className="text-center">
                             {fmt(rv.createdAt)}
                           </td>
 
-                          {/* 액션: 수정(파랑) / 삭제(빨강) */}
                           <td style={{ width: 160 }} className="text-end">
                             <div className="d-inline-flex align-items-center gap-3">
                               <button
@@ -247,7 +240,7 @@ export default function MyReviewsPage() {
                           </td>
                         </tr>
 
-                        {/* 2행: 제목 (번호 셀을 이미 사용하므로 colSpan=5) */}
+                        {/* 2행: 제목 */}
                         <tr key={`${rv.reviewId}-title`}>
                           <td colSpan={5} className="py-2">
                             <span className="text-dark fw-semibold me-2">제목</span>
@@ -255,7 +248,7 @@ export default function MyReviewsPage() {
                           </td>
                         </tr>
 
-                        {/* 3행: 내용 (colSpan=5) */}
+                        {/* 3행: 내용 */}
                         <tr key={`${rv.reviewId}-body`} className={!isEditingThis ? "border-bottom" : ""}>
                           <td colSpan={5} className="py-2">
                             <span className="text-dark fw-semibold me-2">내용</span>
@@ -263,7 +256,7 @@ export default function MyReviewsPage() {
                           </td>
                         </tr>
 
-                        {/* 인라인 편집 행 (번호 셀 rowSpan은 3까지만이라, 에디터는 전체 6칸 사용) */}
+                        {/* 인라인 편집 행 */}
                         {isEditingThis && (
                           <tr key={`editor-${rv.reviewId}`}>
                             <td colSpan={6} className="bg-light">

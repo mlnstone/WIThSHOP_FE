@@ -1,10 +1,10 @@
 // src/components/layout/Header.js
-
 import React, { useEffect, useState } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import useUser from "../../hooks/useUser";
 import useCartCount from "../../hooks/useCartCount";
 import "./Header.css";
+import { apiFetch, authHeaders } from "../../services/api";
 
 export default function Header({ user, onLogout }) {
   const location = useLocation();
@@ -23,18 +23,27 @@ export default function Header({ user, onLogout }) {
   const [adding, setAdding] = useState(false);
   const [addName, setAddName] = useState("");
 
+  // 카테고리 불러오기
   useEffect(() => {
-    fetch("/categories")
-      .then((r) => r.json())
-      .then(setCategories)
-      .catch((e) => console.error("카테고리 불러오기 실패", e));
+    (async () => {
+      try {
+        const { ok, data } = await apiFetch("/categories");
+        if (ok) setCategories(data || []);
+      } catch (e) {
+        console.error("카테고리 불러오기 실패", e);
+      }
+    })();
   }, []);
 
-  const loadBoardTypes = () =>
-    fetch("/board-types")
-      .then((r) => r.json())
-      .then(setBoardTypes)
-      .catch((e) => console.error("게시판 타입 불러오기 실패", e));
+  // 게시판 타입 불러오기
+  const loadBoardTypes = async () => {
+    try {
+      const { ok, data } = await apiFetch("/board-types");
+      if (ok) setBoardTypes(data || []);
+    } catch (e) {
+      console.error("게시판 타입 불러오기 실패", e);
+    }
+  };
 
   useEffect(() => {
     loadBoardTypes();
@@ -44,13 +53,6 @@ export default function Header({ user, onLogout }) {
     if (location.pathname !== "/board") return false;
     const sp = new URLSearchParams(location.search);
     return sp.get("typeId") === String(id);
-  };
-
-  const authHeaders = () => {
-    const token = localStorage.getItem("accessToken");
-    return token
-      ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
-      : { "Content-Type": "application/json" };
   };
 
   const startEdit = (bt) => {
@@ -65,12 +67,12 @@ export default function Header({ user, onLogout }) {
   const saveEdit = async (id) => {
     if (!editName.trim()) return alert("이름을 입력해주세요.");
     try {
-      const res = await fetch(`/admin/board-types/${id}`, {
+      const { ok } = await apiFetch(`/admin/board-types/${id}`, {
         method: "PUT",
-        headers: authHeaders(),
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ name: editName.trim() }),
       });
-      if (!res.ok) throw new Error("수정 실패");
+      if (!ok) throw new Error("수정 실패");
       await loadBoardTypes();
       cancelEdit();
     } catch (e) {
@@ -82,11 +84,11 @@ export default function Header({ user, onLogout }) {
   const deleteType = async (id) => {
     if (!window.confirm("정말 삭제할까요?")) return;
     try {
-      const res = await fetch(`/admin/board-types/${id}`, {
+      const { ok } = await apiFetch(`/admin/board-types/${id}`, {
         method: "DELETE",
         headers: authHeaders(),
       });
-      if (!res.ok) throw new Error("삭제 실패");
+      if (!ok) throw new Error("삭제 실패");
       await loadBoardTypes();
       if (editingId === id) cancelEdit();
     } catch (e) {
@@ -98,12 +100,12 @@ export default function Header({ user, onLogout }) {
   const addType = async () => {
     if (!addName.trim()) return alert("이름을 입력해주세요.");
     try {
-      const res = await fetch(`/admin/board-types`, {
+      const { ok } = await apiFetch(`/admin/board-types`, {
         method: "POST",
-        headers: authHeaders(),
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ name: addName.trim() }),
       });
-      if (!res.ok) throw new Error("추가 실패");
+      if (!ok) throw new Error("추가 실패");
       await loadBoardTypes();
       setAdding(false);
       setAddName("");
@@ -128,35 +130,32 @@ export default function Header({ user, onLogout }) {
           </Link>
 
           {isLoggedIn ? (
-  <>
-    <div className="profile-menu">
-      {/* 클릭 버튼이 아니라 그냥 텍스트 형태 */}
-      <span className="hello-text">
-        <strong>{user.name}</strong>님
-        {isAdmin && <span className="badge">관리자</span>}
-      </span>
+            <>
+              <div className="profile-menu">
+                <span className="hello-text">
+                  <strong>{user.name}</strong>님
+                  {isAdmin && <span className="badge">관리자</span>}
+                </span>
+                <ul className="dropdown-menu">
+                  <li>
+                    <Link to={needsSetup ? "/profile-setup" : "/me"}>
+                      {needsSetup ? "프로필 설정" : "마이페이지"}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/me/orders">주문 내역</Link>
+                  </li>
+                </ul>
+              </div>
 
-      {/* 드롭다운: hover/focus로 열림 (CSS에서 제어) */}
-      <ul className="dropdown-menu">
-        <li>
-          <Link to={needsSetup ? "/profile-setup" : "/me"}>
-            {needsSetup ? "프로필 설정" : "마이페이지"}
-          </Link>
-        </li>
-        <li>
-          <Link to="/me/orders">주문 내역</Link>
-        </li>
-      </ul>
-    </div>
-
-    <button className="link-btn" onClick={onLogout}>로그아웃</button>
-  </>
-) : (
-  <>
-    <Link className="link-btn" to="/login">로그인</Link>
-    <Link className="link-btn" to="/signup">회원가입</Link>
-  </>
-)}
+              <button className="link-btn" onClick={onLogout}>로그아웃</button>
+            </>
+          ) : (
+            <>
+              <Link className="link-btn" to="/login">로그인</Link>
+              <Link className="link-btn" to="/signup">회원가입</Link>
+            </>
+          )}
         </div>
       </div>
 

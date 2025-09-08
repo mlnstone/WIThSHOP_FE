@@ -1,8 +1,8 @@
+// src/components/login/LoginForm.js (경로는 프로젝트 구조에 맞게)
 import React, { useMemo, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import "./LoginForm.css";
-
-const BACKEND = process.env.REACT_APP_BACKEND;
+import { apiFetch, BACKEND } from "../services/api"; // ✅ 추가
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -12,7 +12,6 @@ export default function LoginForm() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 돌아갈 곳
   const from = useMemo(() => {
     const s = location.state?.from;
     if (typeof s === "string" && s) return s;
@@ -32,27 +31,27 @@ export default function LoginForm() {
 
     try {
       setLoading(true);
-      const res = await fetch("/members/login", {
+
+      const { ok, data } = await apiFetch("/members/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      if (!res.ok) throw new Error("로그인 실패");
+      if (!ok) throw new Error("로그인 실패");
 
-      const data = await res.json();
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
       localStorage.removeItem("displayName");
 
       // 로그인 직후 이름 미리 캐시
       try {
-        const meRes = await fetch("/api/me", {
-          headers: { Authorization: `Bearer ${data.accessToken}` }
+        const meRes = await apiFetch("/api/me", {
+          headers: { Authorization: `Bearer ${data.accessToken}` },
         });
-        const me = await meRes.json();
+        const me = meRes.data;
         const name = me?.userName || me?.name;
         if (name) localStorage.setItem("displayName", name);
-      } catch { /* 네트워크 실패 시 무시 */ }
+      } catch { /* ignore */ }
 
       navigate(from, { replace: true });
       window.location.reload();
@@ -72,13 +71,11 @@ export default function LoginForm() {
 
   return (
     <div className="login-page">
-      {/* 상단 로고 버튼 */}
       <div className="login-header">
         <Link to="/" className="logo-btn">WIThSHOP</Link>
       </div>
 
       <form onSubmit={handleSubmit} className="login-sheet">
-        {/* 이메일 */}
         <label className="login-label">이메일</label>
         <div className="line-input">
           <input
@@ -90,7 +87,6 @@ export default function LoginForm() {
           />
         </div>
 
-        {/* 비밀번호 */}
         <label className="login-label mt-3">비밀번호</label>
         <div className="line-input with-icon">
           <input
@@ -110,7 +106,6 @@ export default function LoginForm() {
           </button>
         </div>
 
-        {/* 로그인 버튼 */}
         <button
           type="submit"
           className={`login-main-btn ${canSubmit ? "" : "disabled"}`}
@@ -119,7 +114,6 @@ export default function LoginForm() {
           {loading ? "로그인 중..." : "로그인"}
         </button>
 
-        {/* 하단 링크 */}
         <div className="login-links">
           <a href="/signup">회원가입</a>
           <span className="divider" />
@@ -128,7 +122,6 @@ export default function LoginForm() {
           </button>
         </div>
 
-        {/* 소셜 로그인 (Google) */}
         <a className="google-btn" href={googleLoginHref}>
           Google 로그인
         </a>

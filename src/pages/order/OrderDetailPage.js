@@ -1,7 +1,7 @@
 // src/pages/order/OrderDetailPage.js
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { authHeaders } from "../../services/api";
+import { apiFetch, authHeaders } from "../../services/api";
 
 export default function OrderDetailPage() {
   const { orderCode } = useParams();
@@ -27,36 +27,33 @@ export default function OrderDetailPage() {
       }[s] || s || "-"
     );
   }, [order]);
-  // 파일 상단에 authHeaders 이미 있음
 
-  // ...컴포넌트 내부
+  // 리뷰 작성 버튼 액션
   const goWriteOrAlert = async (menuId) => {
     try {
-      const res = await fetch(`/reviews/exists?menuId=${menuId}&orderCode=${order.orderCode}`, {
-        headers: authHeaders(),
-      });
-      const data = await res.json().catch(() => ({}));
+      const { ok, data } = await apiFetch(
+        `/reviews/exists?menuId=${menuId}&orderCode=${order.orderCode}`,
+        { headers: authHeaders() }
+      );
       const exists = !!data?.exists;
 
-      if (exists) {
+      if (ok && exists) {
         alert("이미 등록한 리뷰가 있습니다!");
-        // 작성페이지 대신 해당 메뉴의 리뷰 섹션으로 보내 주는 UX
         navigate(`/menus/${menuId}#reviews`);
         return;
       }
-
-      // 없으면 작성 페이지로
       navigate(`/reviews/write?orderCode=${order.orderCode}&menuId=${menuId}`);
     } catch {
-      // 네트워크 오류 시엔 일단 작성 페이지로 보내거나, 재시도 유도
       alert("상태 확인 중 오류가 발생했어요. 작성 페이지로 이동합니다.");
       navigate(`/reviews/write?orderCode=${order.orderCode}&menuId=${menuId}`);
     }
   };
+
   const fmtOrderDate = (dt) => {
     if (!dt) return "-";
     const d = new Date(dt);
     return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}`;
+    // (월/일 0패딩이 필요하면 padStart 사용)
   };
 
   const FIXED_IMG =
@@ -81,24 +78,31 @@ export default function OrderDetailPage() {
     (async () => {
       try {
         setLoading(true);
-        const r = await fetch(`/orders/code/${orderCode}`, { headers: authHeaders() });
-        const j = await r.json().catch(() => null);
-        if (!r.ok) { setErr(j?.message || "주문을 불러올 수 없습니다."); return; }
-        if (alive) setOrder(j);
+        const { ok, data } = await apiFetch(`/orders/code/${orderCode}`, {
+          headers: authHeaders(),
+        });
+        if (!ok) {
+          setErr((data && (data.message || data.error)) || "주문을 불러올 수 없습니다.");
+          return;
+        }
+        if (alive) setOrder(data || null);
       } catch {
         setErr("네트워크 오류가 발생했습니다.");
       } finally {
         if (alive) setLoading(false);
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [orderCode]);
 
   const onCancel = async () => {
     if (!order) return;
     if (!window.confirm("이 주문을 취소하시겠습니까?")) return;
     try {
-      const rRefund = await fetch(`/api/payments/refund`, {
+      // 1) 환불
+      const refund = await apiFetch(`/api/payments/refund`, {
         method: "POST",
         headers: { ...authHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -107,17 +111,20 @@ export default function OrderDetailPage() {
           reason: "고객 요청 취소",
         }),
       });
-      const jr = await rRefund.json().catch(() => null);
-      if (!rRefund.ok) return alert(jr?.message || "환불에 실패했습니다.");
+      if (!refund.ok) {
+        return alert((refund.data && (refund.data.message || refund.data.error)) || "환불에 실패했습니다.");
+      }
 
-      const r = await fetch(`/orders/${order.orderId}/cancel`, {
+      // 2) 주문 상태 취소
+      const cancel = await apiFetch(`/orders/${order.orderId}/cancel`, {
         method: "PUT",
         headers: authHeaders(),
       });
-      const j = await r.json().catch(() => null);
-      if (!r.ok) return alert(j?.message || "취소에 실패했습니다.");
+      if (!cancel.ok) {
+        return alert((cancel.data && (cancel.data.message || cancel.data.error)) || "취소에 실패했습니다.");
+      }
 
-      setOrder(j);
+      setOrder(cancel.data);
       alert("환불 및 주문 취소가 완료되었습니다.");
     } catch {
       alert("네트워크 오류");
@@ -130,7 +137,9 @@ export default function OrderDetailPage() {
       <div className="container py-4">
         <div className="alert alert-danger d-flex justify-content-between align-items-center">
           <div>{err}</div>
-          <button className="btn btn-sm btn-outline-secondary" onClick={() => navigate(-1)}>뒤로</button>
+          <button className="btn btn-sm btn-outline-secondary" onClick={() => navigate(-1)}>
+            뒤로
+          </button>
         </div>
       </div>
     );
@@ -168,7 +177,6 @@ export default function OrderDetailPage() {
                 />
 
                 <div className="ms-3 flex-grow-1">
-                  {/* 이름 + (배송완료일 때) 리뷰 버튼을 한 줄에 */}
                   <div className="d-flex align-items-center gap-2">
                     <div className="fw-semibold" style={{ lineHeight: 1.4 }}>
                       {it.menuName}
@@ -214,7 +222,6 @@ export default function OrderDetailPage() {
             {order.orderStatus === "REQUESTED" && (
               <button className="btn btn-danger" onClick={onCancel}>주문 취소</button>
             )}
-
           </div>
         </div>
       </div>

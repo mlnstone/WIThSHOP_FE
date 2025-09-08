@@ -7,6 +7,7 @@ import { onBuyNow as payNow } from "../../components/payment/onBuyNow";
 import { createOrder } from "../../services/order";
 import { syncCartBadge } from "../../lib/syncCartBadge";
 import { useMe } from "../../providers/MeProvider";
+import { apiFetch, authHeaders } from "../../services/api";
 
 const SHIPPING_FEE = 1;
 
@@ -15,19 +16,6 @@ const FALLBACK_IMG =
 
 const fmt = (n) =>
   new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 }).format(n ?? 0);
-
-async function api(path, options) {
-  const token = localStorage.getItem("accessToken");
-  const res = await fetch(path, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    ...options,
-  });
-  const data = await res.json().catch(() => ({}));
-  return { ok: res.ok, data };
-}
 
 export default function CartPage() {
   const navigate = useNavigate();
@@ -43,7 +31,7 @@ export default function CartPage() {
     (async () => {
       setLoading(true);
       try {
-        const { ok, data } = await api("/cart");
+        const { ok, data } = await apiFetch("/cart", { headers: authHeaders() });
         if (!ok || !mounted) return;
 
         const rows = Array.isArray(data) ? data : data?.items ?? [];
@@ -115,8 +103,9 @@ export default function CartPage() {
 
     setBusy(true);
     try {
-      const { ok } = await api(`/cart/items/${item.id}`, {
+      const { ok } = await apiFetch(`/cart/items/${item.id}`, {
         method: "PUT",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ quantity: nextQty }),
       });
       if (!ok) alert("수량 변경에 실패했어요.");
@@ -137,7 +126,10 @@ export default function CartPage() {
 
     setBusy(true);
     try {
-      const { ok } = await api(`/cart/items/${item.id}`, { method: "DELETE" });
+      const { ok } = await apiFetch(`/cart/items/${item.id}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      });
       if (!ok) alert("삭제에 실패했어요.");
     } finally {
       setBusy(false);
@@ -202,7 +194,12 @@ export default function CartPage() {
             setBusy(true);
             try {
               await Promise.all(
-                ids.map((id) => api(`/cart/items/${id}`, { method: "DELETE" }))
+                ids.map((id) =>
+                  apiFetch(`/cart/items/${id}`, {
+                    method: "DELETE",
+                    headers: authHeaders(),
+                  })
+                )
               );
             } finally {
               setBusy(false);

@@ -2,8 +2,7 @@
 import React, { useEffect, useState } from "react";
 import MenuGrid from "../menu/MenuGrid";
 import { Spinner } from "react-bootstrap";
-
-const BACKEND = process.env.REACT_APP_BACKEND;
+import { apiFetch } from "../../services/api";
 
 export default function BestMenusGrid() {
   const [items, setItems] = useState([]);
@@ -11,20 +10,30 @@ export default function BestMenusGrid() {
 
   useEffect(() => {
     let abort = false;
+
     (async () => {
       try {
-        const r = await fetch(`${BACKEND}/menus/best?page=0&size=12`); // 12개
-        const j = await r.json().catch(() => null);
-        const ids = (j?.content || []).map((x) => x.menuId).filter(Boolean);
+        // 베스트 목록
+        const { ok, data } = await apiFetch("/menus/best?page=0&size=12");
+        if (!ok) throw new Error("best fetch fail");
+
+        const ids = (data?.content || [])
+          .map((x) => x.menuId)
+          .filter(Boolean);
+
         if (abort || ids.length === 0) {
           setItems([]);
           return;
         }
-        const detailPromises = ids.slice(0, 12).map(async (id) => { // 12개
+
+        // 상세 병렬 요청 (최대 12개)
+        const detailPromises = ids.slice(0, 12).map(async (id) => {
           try {
-            const res = await fetch(`${BACKEND}/menus/${id}`);
-            const d = await res.json().catch(() => null);
+            const res = await apiFetch(`/menus/${id}`);
+            if (!res.ok) return null;
+            const d = res.data;
             if (!d) return null;
+
             return {
               menuId: d.menuId ?? d.id ?? id,
               menuName: d.menuName ?? d.name ?? "이름 없음",
@@ -39,15 +48,19 @@ export default function BestMenusGrid() {
             return null;
           }
         });
+
         const details = (await Promise.all(detailPromises)).filter(Boolean);
-        if (!abort) setItems(details.slice(0, 12)); // 12개
+        if (!abort) setItems(details.slice(0, 12));
       } catch {
         if (!abort) setItems([]);
       } finally {
         if (!abort) setLoading(false);
       }
     })();
-    return () => { abort = true; };
+
+    return () => {
+      abort = true;
+    };
   }, []);
 
   if (loading) {
@@ -63,12 +76,8 @@ export default function BestMenusGrid() {
   return (
     <section className="best-wrap my-5">
       <div className="container-xxl">
-
-        <h4 className="fw-bold mb-3 text-center">🔥 베스트 상품 12</h4>  
-        <MenuGrid
-          items={items}
-          colClass="col-12 col-sm-6 col-md-3"
-        />
+        <h4 className="fw-bold mb-3 text-center">🔥 베스트 상품 12</h4>
+        <MenuGrid items={items} colClass="col-12 col-sm-6 col-md-3" />
       </div>
     </section>
   );

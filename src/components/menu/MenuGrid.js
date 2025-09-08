@@ -1,12 +1,17 @@
 // src/components/menu/MenuGrid.js
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { apiFetch, authHeaders } from "../../services/api";
 
 const reviewCache = new Map();
 
 function useReviewSummary(menuId, seedAvg, seedCount) {
-  const [avg, setAvg] = useState(typeof seedAvg === "number" ? Number(seedAvg) : null);
-  const [count, setCount] = useState(typeof seedCount === "number" ? Number(seedCount) : null);
+  const [avg, setAvg] = useState(
+    typeof seedAvg === "number" ? Number(seedAvg) : null
+  );
+  const [count, setCount] = useState(
+    typeof seedCount === "number" ? Number(seedCount) : null
+  );
   const [loading, setLoading] = useState(false);
   const abortRef = useRef(null);
 
@@ -21,7 +26,8 @@ function useReviewSummary(menuId, seedAvg, seedCount) {
     if (!menuId) return;
     if (reviewCache.has(menuId)) {
       const { avg: cAvg, count: cCount } = reviewCache.get(menuId);
-      setAvg(cAvg); setCount(cCount);
+      setAvg(cAvg);
+      setCount(cCount);
       return;
     }
     if (!needFetch) return;
@@ -32,15 +38,18 @@ function useReviewSummary(menuId, seedAvg, seedCount) {
 
     (async () => {
       try {
-        const r = await fetch(`/menus/${menuId}/reviews/summary`, { signal: controller.signal });
-        if (!r.ok) return;
-        const j = await r.json().catch(() => null);
-        const a = Number(j?.average);
-        const c = Number(j?.count);
+        const { ok, data } = await apiFetch(
+          `/menus/${menuId}/reviews/summary`,
+          { signal: controller.signal }
+        );
+        if (!ok) return;
+        const a = Number(data?.average);
+        const c = Number(data?.count);
         const safeAvg = Number.isFinite(a) ? Number(a.toFixed(2)) : null;
         const safeCnt = Number.isFinite(c) ? c : 0;
         reviewCache.set(menuId, { avg: safeAvg, count: safeCnt });
-        setAvg(safeAvg); setCount(safeCnt);
+        setAvg(safeAvg);
+        setCount(safeCnt);
       } finally {
         setLoading(false);
       }
@@ -55,9 +64,6 @@ function useReviewSummary(menuId, seedAvg, seedCount) {
 function MenuCard({ item, onAdd, onGoDetail, isLoading, colClass }) {
   const id = item.menuId ?? item.id;
   const name = item.menuName ?? item.name ?? "이름 없음";
-  const img =
-    "https://i.namu.wiki/i/tlD-CsVpOQNVhXNTdFNOVYVoHvto8Dfwd1kls-ayVEd2WNN8Qem79cJy1xzJ6vpLAw67HDnGU4b5CgvoqUb5Q-HKkIg7m0I8QQHBf1UEXwa6F2i0iBhxFtqU8-nXEhelUDVssDsBwtHNmu5eEPTyWQ.webp";
-
 
   const price = item.salePrice ?? item.price ?? 0;
   const compareAt = item.originalPrice ?? item.listPrice ?? null;
@@ -85,10 +91,11 @@ function MenuCard({ item, onAdd, onGoDetail, isLoading, colClass }) {
         onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onGoDetail(id)}
         style={{ cursor: "pointer" }}
       >
-        {/* ✅ 1:1 정사각형 이미지 영역 */}
+        {/* 1:1 이미지 영역 */}
         <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", overflow: "hidden" }}>
           <img
-            src={img}
+            src="https://i.namu.wiki/i/tlD-CsVpOQNVhXNTdFNOVYVoHvto8Dfwd1kls-ayVEd2WNN8Qem79cJy1xzJ6vpLAw67HDnGU4b5CgvoqUb5Q-HKkIg7m0I8QQHBf1UEXwa6F2i0iBhxFtqU8-nXEhelUDVssDsBwtHNmu5eEPTyWQ.webp"
+
             alt={name}
             className="card-img-top"
             style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
@@ -101,7 +108,10 @@ function MenuCard({ item, onAdd, onGoDetail, isLoading, colClass }) {
           <div className="fw-semibold mb-1" title={name} style={{ minHeight: 24 }}>{name}</div>
 
           {avg != null && count != null && (
-            <div className="text-muted small mb-1 d-flex align-items-center gap-1" aria-label={`평점 ${avg}점, 리뷰 ${count}개`}>
+            <div
+              className="text-muted small mb-1 d-flex align-items-center gap-1"
+              aria-label={`평점 ${avg}점, 리뷰 ${count}개`}
+            >
               <span className="star-icon" aria-hidden="true" />
               <span>{avg.toFixed(1)} ({count.toLocaleString()})</span>
             </div>
@@ -114,14 +124,22 @@ function MenuCard({ item, onAdd, onGoDetail, isLoading, colClass }) {
           )}
 
           <div className="mb-1 d-flex align-items-baseline gap-2">
-            {discountPct > 0 && <span className="fw-bold" style={{ color: "#E03131" }}>{discountPct}%</span>}
-            <span className="fw-bold" style={{ fontSize: 18, color: "#0B1320" }}>{price.toLocaleString()}원</span>
+            {discountPct > 0 && (
+              <span className="fw-bold" style={{ color: "#E03131" }}>{discountPct}%</span>
+            )}
+            <span className="fw-bold" style={{ fontSize: 18, color: "#0B1320" }}>
+              {price.toLocaleString()}원
+            </span>
           </div>
 
           <button
             className="btn btn-sm btn-outline-dark mt-auto"
             disabled={isLoading}
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAdd(id, 1); }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onAdd(id, 1);
+            }}
           >
             {isLoading ? "담는 중..." : "담기"}
           </button>
@@ -138,14 +156,8 @@ export default function MenuGrid({ items, colClass = "col-6 col-md-4 col-lg-3" }
 
   if (!items?.length) return <div className="text-muted">표시할 메뉴가 없습니다.</div>;
 
-  const authHeaders = () => {
-    const token = localStorage.getItem("accessToken");
-    return token
-      ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
-      : { "Content-Type": "application/json" };
-  };
-
-  const goDetail = (menuId) => navigate(`/menus/${menuId}`, { state: { from: location } });
+  const goDetail = (menuId) =>
+    navigate(`/menus/${menuId}`, { state: { from: location } });
 
   const handleAdd = async (menuId, quantity = 1) => {
     const token = localStorage.getItem("accessToken");
@@ -155,14 +167,14 @@ export default function MenuGrid({ items, colClass = "col-6 col-md-4 col-lg-3" }
     }
     try {
       setLoadingId(menuId);
-      const res = await fetch("/cart/items", {
+      const { ok, data } = await apiFetch("/cart/items", {
         method: "POST",
-        headers: authHeaders(),
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ menuId, quantity }),
       });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        alert((data && (data.message || data.error)) || "장바구니 담기에 실패했습니다.");
+      if (!ok) {
+        const msg = (data && (data.message || data.error)) || "장바구니 담기에 실패했습니다.";
+        alert(msg);
         return;
       }
       alert("장바구니에 담았습니다!");
@@ -185,7 +197,7 @@ export default function MenuGrid({ items, colClass = "col-6 col-md-4 col-lg-3" }
             onAdd={handleAdd}
             onGoDetail={goDetail}
             isLoading={loadingId === id}
-            colClass={colClass}  
+            colClass={colClass}
           />
         );
       })}

@@ -1,6 +1,7 @@
-// src/pages/OAuth2Callback.js
+// src/pages/auth/OAuth2Callback.js
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiFetch } from "../../services/api"; // ✅ 공통 apiFetch 사용
 
 export default function OAuth2Callback() {
   const navigate = useNavigate();
@@ -21,24 +22,17 @@ export default function OAuth2Callback() {
       }
 
       // 2) 바로 이름 캐시 (displayName)
-      //    - /api/me 성공 시: userName(우선) → name → email
-      //    - 실패 시: JWT에서 name/email 파싱 시도(임시 표시용)
       let displayName = "";
 
       async function fetchMeAndCache() {
-        try {
-          const res = await fetch("/api/me", {
-            headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-          });
-        if (!res.ok) return false;
+        const { ok, data } = await apiFetch("/api/me", {
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+        });
+        if (!ok || !data) return false;
 
-          const me = await res.json();
-          displayName = me?.userName || me?.name || me?.email || "";
-          if (displayName) localStorage.setItem("displayName", displayName);
-          return true;
-        } catch {
-          return false;
-        }
+        displayName = data.userName || data.name || data.email || "";
+        if (displayName) localStorage.setItem("displayName", displayName);
+        return true;
       }
 
       // JWT 임시 파서 (백업용)
@@ -62,28 +56,21 @@ export default function OAuth2Callback() {
         if (guess) localStorage.setItem("displayName", guess);
       }
 
-      // 3) 프로필 세팅 필요 여부 판정
-      //    (/api/me가 성공했을 때만 정확히 판단 가능)
+      // 3) 프로필 세팅 필요 여부 판정 (성공했을 때만 정확)
       let needsSetup = false;
       if (ok) {
-        try {
-          const res = await fetch("/api/me", {
-            headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-          });
-          const me = await res.json();
-          const { userName, birth, gender, phone } = me || {};
-          needsSetup = !userName || !birth || !gender || !phone;
-        } catch {
-          // 판단 불가면 일단 홈으로
-          needsSetup = false;
-        }
+        const { data: me } = await apiFetch("/api/me", {
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+        });
+        const { userName, birth, gender, phone } = me || {};
+        needsSetup = !userName || !birth || !gender || !phone;
       }
 
       // 4) 라우팅
       if (needsSetup) {
         navigate("/profile-setup", { replace: true });
       } else {
-        // 하드 새로고침으로 헤더 즉시 반영
+        // 헤더 즉시 반영 위해 전체 새로고침
         window.location.replace("/");
       }
     })();

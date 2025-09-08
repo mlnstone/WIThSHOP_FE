@@ -7,6 +7,7 @@ import InstallmentInfo from "../../components/payment/InstallmentInfo";
 import Pagination from "../../components/common/Pagination";
 import "./MenuDetailPage.css";
 import { useMe } from "../../providers/MeProvider";
+import { apiFetch } from "../../services/api";
 
 function extractImages(menu) {
   if (Array.isArray(menu?.images) && menu.images.length) return menu.images;
@@ -24,10 +25,8 @@ export default function MenuDetailPage() {
   const location = useLocation();
   const [sp, setSp] = useSearchParams();
 
-  // 전역 사용자
   const { loading: meLoading } = useMe();
 
-  // 상태
   const [menu, setMenu] = useState(null);
   const [qty, setQty] = useState(1);
   const [menuLoading, setMenuLoading] = useState(true);
@@ -38,7 +37,7 @@ export default function MenuDetailPage() {
   const [avgRating, setAvgRating] = useState(null);
   const [reviews, setReviews] = useState([]);
 
-  // ✅ URL 쿼리 → 0-base page 추출 (Page 대문자도 허용)
+  // URL 쿼리 → 0-base page
   const reviewPage = useMemo(() => {
     const raw = sp.get("page") ?? sp.get("Page") ?? "0";
     const n = Number(raw);
@@ -71,17 +70,16 @@ export default function MenuDetailPage() {
     (async () => {
       try {
         setMenuLoading(true);
-        const r = await fetch(`/menus/${menuId}`);
-        const j = await r.json().catch(() => null);
-        if (!r.ok) {
-          setErr(j?.message || "상품을 불러오지 못했습니다.");
+        const { ok, data } = await apiFetch(`/menus/${menuId}`);
+        if (!ok) {
+          setErr((data && (data.message || data.error)) || "상품을 불러오지 못했습니다.");
           return;
         }
-        alive && setMenu(j);
+        if (alive) setMenu(data || null);
       } catch {
         setErr("네트워크 오류가 발생했습니다.");
       } finally {
-        alive && setMenuLoading(false);
+        if (alive) setMenuLoading(false);
       }
     })();
     return () => { alive = false; };
@@ -90,11 +88,10 @@ export default function MenuDetailPage() {
   // 리뷰 요약
   const loadSummary = useCallback(async () => {
     try {
-      const r = await fetch(`/menus/${menuId}/reviews/summary`);
-      if (!r.ok) return;
-      const j = await r.json();
-      if (typeof j?.count === "number") setReviewCount(j.count);
-      const avg = Number(j?.average);
+      const { ok, data } = await apiFetch(`/menus/${menuId}/reviews/summary`);
+      if (!ok || !data) return;
+      if (typeof data?.count === "number") setReviewCount(data.count);
+      const avg = Number(data?.average);
       setAvgRating(Number.isFinite(avg) ? Number(avg.toFixed(2)) : null);
     } catch {}
   }, [menuId]);
@@ -104,25 +101,23 @@ export default function MenuDetailPage() {
     async (page = reviewPage, size = reviewSize) => {
       try {
         const qs = new URLSearchParams({ page: String(page), size: String(size), sort: "createdAt,desc" });
-        const r = await fetch(`/menus/${menuId}/reviews?${qs.toString()}`);
-        const j = await r.json().catch(() => null);
-        if (!j) return;
-        if (Array.isArray(j.content)) setReviews(j.content);
+        const { ok, data } = await apiFetch(`/menus/${menuId}/reviews?${qs.toString()}`);
+        if (!ok || !data) return;
+        if (Array.isArray(data.content)) setReviews(data.content);
         setReviewPageData({
-          number: j.number ?? page,
-          totalPages: j.totalPages ?? 1,
+          number: data.number ?? page,
+          totalPages: data.totalPages ?? 1,
         });
       } catch {}
     },
     [menuId, reviewPage, reviewSize]
   );
 
-  // ✅ 메뉴 변경 시: page 쿼리 정규화/초기화만 수행 (데이터 로드는 아래 effect가 담당)
+  // 메뉴 변경 시: page 쿼리 정규화/초기화 + 요약 로드
   useEffect(() => {
     if (!menuId) return;
     loadSummary();
 
-    // page 쿼리가 전혀 없으면 0으로 세팅
     if (!sp.has("page") && !sp.has("Page")) {
       setSp((prev) => {
         const q = new URLSearchParams(prev);
@@ -132,7 +127,6 @@ export default function MenuDetailPage() {
       return;
     }
 
-    // Page(대문자)로 들어온 경우 소문자 page로 정규화
     if (sp.has("Page") && !sp.has("page")) {
       const v = sp.get("Page");
       setSp((prev) => {
@@ -144,7 +138,7 @@ export default function MenuDetailPage() {
     }
   }, [menuId, sp, setSp, loadSummary]);
 
-  // ✅ reviewPage / reviewSize / menuId 변할 때마다 목록 로드
+  // reviewPage / reviewSize / menuId 변할 때 목록 로드
   useEffect(() => {
     if (!menuId) return;
     loadReviews(reviewPage, reviewSize);
@@ -155,10 +149,8 @@ export default function MenuDetailPage() {
     let alive = true;
     (async () => {
       try {
-        const r = await fetch(`/config/shipping-fee`);
-        if (!r.ok) return;
-        const fee = await r.json().catch(() => null);
-        alive && typeof fee === "number" && setShippingFee(fee);
+        const { ok, data } = await apiFetch(`/config/shipping-fee`);
+        if (ok && typeof data === "number" && alive) setShippingFee(data);
       } catch {}
     })();
     return () => { alive = false; };
@@ -182,7 +174,7 @@ export default function MenuDetailPage() {
 
   const { totalPages } = reviewPageData;
 
-  // ✅ Pagination onChange (0-base)
+  // Pagination onChange (0-base)
   const goReviewPage = (p) => {
     const next = Math.max(0, Math.min(totalPages - 1, p));
     setSp((prev) => {
@@ -287,27 +279,26 @@ export default function MenuDetailPage() {
             <span className="text-muted">· 리뷰 {reviewCount.toLocaleString()}건</span>
           </h4>
 
-          <div className="d-flex align-items-center gap-2">
-            <span className="text-muted small">페이지당</span>
-            <select
-              className="form-select form-select-sm"
-              style={{ width: 80 }}
-              value={reviewSize}
-              onChange={(e) => {
-                const s = Number(e.target.value) || 5;
-                setReviewSize(s);
-                // page=0으로 쿼리 초기화 (로드는 effect가 처리)
-                setSp((prev) => {
-                  const q = new URLSearchParams(prev);
-                  q.set("page", "0");
-                  return q;
-                });
-              }}
-            >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-            </select>
-          </div>
+        <div className="d-flex align-items-center gap-2">
+          <span className="text-muted small">페이지당</span>
+          <select
+            className="form-select form-select-sm"
+            style={{ width: 80 }}
+            value={reviewSize}
+            onChange={(e) => {
+              const s = Number(e.target.value) || 5;
+              setReviewSize(s);
+              setSp((prev) => {
+                const q = new URLSearchParams(prev);
+                q.set("page", "0");
+                return q;
+              });
+            }}
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+          </select>
+        </div>
         </div>
 
         <div className="list-group mt-3 mb-3">
@@ -339,10 +330,10 @@ export default function MenuDetailPage() {
         </div>
 
         <Pagination
-          page={reviewPage}                      // 0-base (URL 쿼리 기준)
+          page={reviewPage}
           totalPages={reviewPageData.totalPages}
           blockSize={5}
-          onChange={goReviewPage}                // 0-base로 받음
+          onChange={goReviewPage}
           variant="dark"
           size="sm"
           className="justify-content-center"

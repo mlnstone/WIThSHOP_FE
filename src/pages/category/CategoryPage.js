@@ -2,7 +2,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams, Link, useLocation } from "react-router-dom";
 import MenuGrid from "../../components/menu/MenuGrid";
-import Pagination from "../../components/common/Pagination"; // ✅ 추가
+import Pagination from "../../components/common/Pagination";
+import { apiFetch } from "../../services/api"; 
 
 export default function CategoryPage() {
   const { categoryId } = useParams();
@@ -15,25 +16,21 @@ export default function CategoryPage() {
 
   const page = useMemo(() => Number(searchParams.get("page") || 0), [searchParams]);
 
+  // 카테고리 이름 조회
   useEffect(() => {
     if (categoryName) return;
-    fetch(`/categories/${categoryId}`)
-      .then(async (res) => {
-        const txt = await res.text();
-        try { return JSON.parse(txt); } catch { return null; }
+    apiFetch(`/categories/${categoryId}`)
+      .then(({ ok, data }) => {
+        if (ok && data?.categoryName) setCategoryName(data.categoryName);
       })
-      .then((dto) => { if (dto?.categoryName) setCategoryName(dto.categoryName); })
-      .catch(() => { });
+      .catch(() => {});
   }, [categoryId, categoryName]);
 
+  // 카테고리별 메뉴 목록 조회
   useEffect(() => {
     setLoading(true);
-    fetch(`/categories/${categoryId}/menus?page=${page}&size=12`)
-      .then(async (res) => {
-        const txt = await res.text();
-        try { return JSON.parse(txt); } catch { throw new Error("Invalid JSON"); }
-      })
-      .then(setPageData)
+    apiFetch(`/categories/${categoryId}/menus?page=${page}&size=12`)
+      .then(({ ok, data }) => setPageData(ok ? data : null))
       .catch(() => setPageData(null))
       .finally(() => setLoading(false));
   }, [categoryId, page]);
@@ -43,7 +40,7 @@ export default function CategoryPage() {
 
   const { content = [], number = 0, totalPages = 1 } = pageData;
 
-  // 페이지 변경 핸들러 (다른 쿼리 유지하려면 필요시 추가로 병합)
+  // 페이지 변경 핸들러
   const goPage = (p) => setSearchParams({ page: String(p) });
 
   return (
@@ -55,14 +52,12 @@ export default function CategoryPage() {
 
       <MenuGrid items={content} />
 
-      {/* 페이지네이션 */}
-
       <Pagination
         page={number}
         totalPages={totalPages}
         blockSize={5}
         onChange={goPage}
-        variant="dark"     // 'dark' | 'primary' | 'gray'
+        variant="dark"
         size="sm"
         className="mt-4"
       />

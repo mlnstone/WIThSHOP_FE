@@ -1,4 +1,6 @@
+// src/components/payment/InstallmentInfo.js
 import React, { useEffect, useState } from "react";
+import { apiFetch } from "../../services/api";
 
 /**
  * 무이자 할부 안내 모달
@@ -16,18 +18,18 @@ export default function InstallmentInfo({ open, onClose }) {
   useEffect(() => {
     if (!open) return;
     let alive = true;
+    const controller = new AbortController();
 
     (async () => {
       try {
         setLoading(true);
-        const r = await fetch("/config/installments");
-        if (r.ok) {
-          const json = await r.json().catch(() => null);
-          if (alive && Array.isArray(json)) {
-            setPlans(json);
-            setLoading(false);
-            return;
-          }
+        const { ok, data } = await apiFetch("/config/installments", {
+          signal: controller.signal,
+        });
+        if (ok && alive && Array.isArray(data)) {
+          setPlans(data);
+          setLoading(false);
+          return;
         }
       } catch {
         /* ignore */
@@ -46,7 +48,10 @@ export default function InstallmentInfo({ open, onClose }) {
       }
     })();
 
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+      controller.abort();
+    };
   }, [open]);
 
   if (!open) return null;
@@ -68,7 +73,7 @@ export default function InstallmentInfo({ open, onClose }) {
             <table className="table">
               <thead>
                 <tr>
-                  <th style={{width: 140}}>카드사</th>
+                  <th style={{ width: 140 }}>카드사</th>
                   <th>무이자 개월</th>
                 </tr>
               </thead>

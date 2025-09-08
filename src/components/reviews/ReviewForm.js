@@ -1,6 +1,7 @@
 // src/components/reviews/ReviewForm.js
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { apiFetch, authHeaders } from "../../services/api";
 
 export default function ReviewForm({ menuId, orderCode, onSuccess }) {
   const [rating, setRating] = useState(5);    // 1~5 정수
@@ -12,13 +13,6 @@ export default function ReviewForm({ menuId, orderCode, onSuccess }) {
 
   const navigate = useNavigate();
   const location = useLocation();
-
-  const authHeaders = () => {
-    const token = localStorage.getItem("accessToken");
-    return token
-      ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
-      : { "Content-Type": "application/json" };
-  };
 
   const ensureLogin = () => {
     const token = localStorage.getItem("accessToken");
@@ -48,9 +42,9 @@ export default function ReviewForm({ menuId, orderCode, onSuccess }) {
 
     try {
       setSubmitting(true);
-      const res = await fetch("/reviews", {
+      const { ok, data } = await apiFetch("/reviews", {
         method: "POST",
-        headers: authHeaders(),
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({
           menuId,
           orderCode,                 // ✅ 서버로 주문번호 전달
@@ -61,8 +55,7 @@ export default function ReviewForm({ menuId, orderCode, onSuccess }) {
         }),
       });
 
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
+      if (!ok) {
         alert(data?.message || data?.error || "리뷰 등록에 실패했습니다.");
         return;
       }

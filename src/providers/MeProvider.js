@@ -1,5 +1,6 @@
 // src/providers/MeProvider.js
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import { apiFetch, authHeaders } from "../services/api";
 
 const MeCtx = createContext(null);
 
@@ -14,13 +15,14 @@ export function MeProvider({ children }) {
 
     (async () => {
       try {
-        const r = await fetch("/api/me", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("accessToken") || ""}` },
+        const { ok, data } = await apiFetch("/api/me", {
+          headers: authHeaders(),
           cache: "no-store",
         });
-        if (r.ok) setMe(await r.json());
-      } catch {}
-      setLoading(false);
+        if (ok && data) setMe(data);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 

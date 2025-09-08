@@ -2,7 +2,7 @@
 import React, { useMemo, useEffect, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import ReviewForm from "../../components/reviews/ReviewForm";
-import { authHeaders } from "../../services/api";
+import { apiFetch, authHeaders } from "../../services/api";
 
 export default function ReviewWritePage() {
   const [sp] = useSearchParams();
@@ -19,17 +19,17 @@ export default function ReviewWritePage() {
   const [menu, setMenu] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 진입 가드
+  // 진입 가드: 이미 해당 주문/상품으로 리뷰가 있으면 차단
   useEffect(() => {
     let alive = true;
     (async () => {
       if (!orderCode || !menuId) return;
       try {
-        const r = await fetch(`/reviews/exists?menuId=${menuId}&orderCode=${orderCode}`, {
-          headers: authHeaders(),
-        });
-        const j = await r.json().catch(() => ({}));
-        if (alive && j?.exists) {
+        const { ok, data } = await apiFetch(
+          `/reviews/exists?menuId=${menuId}&orderCode=${orderCode}`,
+          { headers: authHeaders() }
+        );
+        if (alive && ok && data?.exists) {
           alert("이미 이 주문에 대한 리뷰를 작성하셨습니다.");
           navigate(`/menus/${menuId}#reviews`, { replace: true });
         }
@@ -47,11 +47,10 @@ export default function ReviewWritePage() {
     (async () => {
       try {
         setLoading(true);
-        const res = await fetch(`/menus/${menuId}`, { headers: authHeaders() });
-        const data = await res.json().catch(() => null);
-        if (res.ok && alive) setMenu(data);
-      } catch {
-        // 무시 가능
+        const { ok, data } = await apiFetch(`/menus/${menuId}`, {
+          headers: authHeaders(),
+        });
+        if (alive && ok) setMenu(data || null);
       } finally {
         if (alive) setLoading(false);
       }
