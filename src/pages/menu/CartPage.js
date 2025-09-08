@@ -166,6 +166,7 @@ export default function CartPage() {
         userCouponId: null,
         usePoints: 0,
         useDynamicScript: true,
+        m_redirect_url: `${window.location.origin}/me/orders`,
       });
     } finally {
       setBusy(false);

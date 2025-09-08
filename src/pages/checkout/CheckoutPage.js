@@ -202,6 +202,7 @@ export default function BenefitsPage() {
       userCouponId: selectedCouponId || null,
       usePoints: safeUsePoints,
       useDynamicScript: true,
+      m_redirect_url: `${window.location.origin}/me/orders`,
     });
   }, [me, menu, qty, selectedCouponId, expectedPoints, navigate]);
 

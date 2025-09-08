@@ -53,20 +53,26 @@ export async function apiFetch(path, options = {}, _triedOnce = false) {
   const hdrAuth = Object.keys(headers).some((k) => k.toLowerCase() === "authorization");
   const hasAuth = !!(lcToken || hdrAuth);
 
+  // ✅ 최초 요청에도 토큰 자동 주입
+  const finalHeaders = {
+    Accept: "application/json, text/plain;q=0.9,*/*;q=0.8",
+    ...headers,
+  };
+  if (!hdrAuth && lcToken) {
+    finalHeaders.Authorization = `Bearer ${lcToken}`;
+  }
+
   const res = await fetch(url, {
-    headers: {
-      Accept: "application/json, text/plain;q=0.9,*/*;q=0.8",
-      ...headers,
-    },
+    headers: finalHeaders,
     ...rest,
   });
 
-  // ✅ 토큰이 있을 때만(로그인 상태일 때만) 401/403 처리
+  // 만료/권한 오류 시 한 번만 리프레시 후 재시도
   if (hasAuth && (res.status === 401 || res.status === 403) && !_triedOnce) {
     const ok = await refreshAccessToken();
     if (ok) {
       const token = localStorage.getItem("accessToken");
-      const retryHeaders = { ...headers };
+      const retryHeaders = { ...finalHeaders };
       if (token) retryHeaders.Authorization = `Bearer ${token}`;
       return apiFetch(path, { ...options, headers: retryHeaders }, true);
     } else {
