@@ -19,18 +19,40 @@ export default function MainCarousel() {
   };
 
   const images = [
-    "https://i.namu.wiki/i/r8272oYH3BGODl2Tc2pw80HakUDSHwCBzG7yQiKZuGq06CFw4NASVgXn7QWOIZQGigvFsR_wNLguNK0efreU9-q1rEVzahLfPbwGkDLFQ8MomuCG3qyUTGY0mflRg3nEmm4ZAT44TVMzLufxTrRYbw.webp",
-    "https://i.namu.wiki/i/7qOBsy38ICHZTDQM2htYTwRKIRcNJjUoXTHEQPSTjcHSM6q-9wjtjZ-6nNeRgapmZdkFGwkp6XMm4DdTuZS3Qt7OtJxNMWwegYo0OK5x6LNe5DrUDyLZCiLDpZ4sr-ydy__Gg0I_HIexZH8PwjFKYw.webp",
-    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcREBqw6THa8LdmE6UqC92pyYfYyaBxXENxjGg&s"
+    {
+      src: "https://withshop.s3.ap-northeast-2.amazonaws.com/r1.png",
+      link: "https://www.instagram.com/reel/C1JiV9ZP1mN/",
+    },
+    {
+      src: "https://withshop.s3.ap-northeast-2.amazonaws.com/r2.png",
+      link: "https://www.instagram.com/reel/C1381WNv7z9/",
+    },
+    {
+      src: "https://withshop.s3.ap-northeast-2.amazonaws.com/r3.png",
+      link: null,
+    },
   ];
 
   return (
-    // 화면 전체폭으로 빼기
     <section className="main-carousel">
       <Slider {...settings}>
-        {images.map((src, idx) => (
+        {images.map((item, idx) => (
           <div key={idx} className="banner-frame">
-            <img className="banner-img" src={src} alt={`슬라이드 ${idx + 1}`} />
+            {item.link ? (
+              <a href={item.link} target="_blank" rel="noopener noreferrer">
+                <img
+                  className="banner-img"
+                  src={item.src}
+                  alt={`슬라이드 ${idx + 1}`}
+                />
+              </a>
+            ) : (
+              <img
+                className="banner-img"
+                src={item.src}
+                alt={`슬라이드 ${idx + 1}`}
+              />
+            )}
           </div>
         ))}
       </Slider>

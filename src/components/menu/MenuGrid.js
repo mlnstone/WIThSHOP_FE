@@ -65,6 +65,9 @@ function MenuCard({ item, onAdd, onGoDetail, isLoading, colClass }) {
   const id = item.menuId ?? item.id;
   const name = item.menuName ?? item.name ?? "이름 없음";
 
+  const NO_IMAGE_URL =
+    "https://withshop.s3.ap-northeast-2.amazonaws.com/f982f525-a7bb-40a5-823f-680c16f2c2cc_noimage.jpeg";
+
   const price = item.salePrice ?? item.price ?? 0;
   const compareAt = item.originalPrice ?? item.listPrice ?? null;
   const discountPct =
@@ -81,6 +84,10 @@ function MenuCard({ item, onAdd, onGoDetail, isLoading, colClass }) {
 
   const { avg, count } = useReviewSummary(id, seedAvg, seedCount);
 
+  const imageUrl =
+    item.image && String(item.image).trim().length > 0
+      ? item.image
+      : NO_IMAGE_URL;
   return (
     <div className={colClass} key={id}>
       <div
@@ -94,13 +101,18 @@ function MenuCard({ item, onAdd, onGoDetail, isLoading, colClass }) {
         {/* 1:1 이미지 영역 */}
         <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", overflow: "hidden" }}>
           <img
-            src="https://i.namu.wiki/i/tlD-CsVpOQNVhXNTdFNOVYVoHvto8Dfwd1kls-ayVEd2WNN8Qem79cJy1xzJ6vpLAw67HDnGU4b5CgvoqUb5Q-HKkIg7m0I8QQHBf1UEXwa6F2i0iBhxFtqU8-nXEhelUDVssDsBwtHNmu5eEPTyWQ.webp"
+            src={imageUrl}
+
 
             alt={name}
             className="card-img-top"
             style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
             loading="lazy"
-            onError={(e) => (e.currentTarget.src = "https://via.placeholder.com/600?text=No+Image")}
+            onError={(e) => {
+              if (e.currentTarget.src !== NO_IMAGE_URL) {
+                e.currentTarget.src = NO_IMAGE_URL;
+              }
+            }}
           />
         </div>
 
