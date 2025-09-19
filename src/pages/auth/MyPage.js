@@ -14,7 +14,7 @@ export default function MyPage() {
     if (!token) { setLoading(false); return; }
 
     const controller = new AbortController();
-    apiFetch("/api/me", {
+    apiFetch("/me", {
       headers: { Authorization: `Bearer ${token}` },
       signal: controller.signal,
     })

@@ -56,7 +56,7 @@ export default function useUser() {
     const fallbackName = user.name;
 
     const controller = new AbortController();
-    apiFetch("/api/me", {
+    apiFetch("/me", {
       headers: { Authorization: `Bearer ${token}` },
       signal: controller.signal,
     })
@@ -90,7 +90,7 @@ export default function useUser() {
   const refreshMe = async () => {
     if (!token) return null;
     try {
-      const { data } = await apiFetch("/api/me", {
+      const { data } = await apiFetch("/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (data) {

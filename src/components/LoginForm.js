@@ -45,7 +45,7 @@ export default function LoginForm() {
 
       // 로그인 직후 이름 미리 캐시
       try {
-        const meRes = await apiFetch("/api/me", {
+        const meRes = await apiFetch("/me", {
           headers: { Authorization: `Bearer ${data.accessToken}` },
         });
         const me = meRes.data;

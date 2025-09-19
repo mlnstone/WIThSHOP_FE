@@ -19,7 +19,7 @@ export function MeProvider({ children }) {
         const token = localStorage.getItem("accessToken");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-        const r = await fetch("/api/me", {
+        const r = await fetch("/me", {
           headers,
           cache: "no-store",
           signal: controller.signal,

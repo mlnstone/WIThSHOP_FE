@@ -18,7 +18,7 @@
     "slick-carousel": "^1.8.1",
     "web-vitals": "^2.1.4"
   },
-  "proxy": "http://localhost:8887",
+  "proxy": "http://localhost:8887/api",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",

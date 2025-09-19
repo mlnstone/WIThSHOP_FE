@@ -25,7 +25,7 @@ export default function OAuth2Callback() {
       let displayName = "";
 
       async function fetchMeAndCache() {
-        const { ok, data } = await apiFetch("/api/me", {
+        const { ok, data } = await apiFetch("/me", {
           headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
         });
         if (!ok || !data) return false;
@@ -59,7 +59,7 @@ export default function OAuth2Callback() {
       // 3) 프로필 세팅 필요 여부 판정 (성공했을 때만 정확)
       let needsSetup = false;
       if (ok) {
-        const { data: me } = await apiFetch("/api/me", {
+        const { data: me } = await apiFetch("/me", {
           headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
         });
         const { userName, birth, gender, phone } = me || {};

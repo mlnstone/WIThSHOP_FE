@@ -19,6 +19,12 @@ export default function ProfileSetupPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // 약관 동의 상태
+  const [agreeAll, setAgreeAll] = useState(false);
+  const [agreeService, setAgreeService] = useState(false); // (필수)
+  const [showTerms, setShowTerms] = useState(false);
+  const [termsError, setTermsError] = useState("");
+
   const navigate = useNavigate();
   const location = useLocation();
   const { refreshMe } = useUser();
@@ -43,7 +49,7 @@ export default function ProfileSetupPage() {
         navigate("/login", { replace: true });
         return;
       }
-      const { ok, data } = await apiFetch("/api/me", {
+      const { ok, data } = await apiFetch("/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setLoading(false);
@@ -65,6 +71,20 @@ export default function ProfileSetupPage() {
     setError("");
   };
 
+  // 약관 체크 로직
+  const toggleAgreeAll = () => {
+    const next = !agreeAll;
+    setAgreeAll(next);
+    setAgreeService(next);
+    setTermsError("");
+  };
+  const toggleAgreeService = () => {
+    const next = !agreeService;
+    setAgreeService(next);
+    setAgreeAll(next); // 필수 하나뿐이므로 동기화
+    if (next) setTermsError("");
+  };
+
   const validate = () => {
     const fe = {};
     if (!form.name) fe.name = "이름을 입력하세요.";
@@ -74,7 +94,15 @@ export default function ProfileSetupPage() {
     if (!form.phone) fe.phone = "전화번호를 입력하세요.";
     else if (!phoneRule.test(form.phone)) fe.phone = "전화번호 형식이 올바르지 않습니다.";
     setFieldErrors(fe);
-    return Object.keys(fe).length === 0;
+
+    // 약관 (필수)
+    if (!agreeService) {
+      setTermsError("WIThSHOP 이용 약관(필수)에 동의해 주세요.");
+    } else {
+      setTermsError("");
+    }
+
+    return Object.keys(fe).length === 0 && agreeService;
   };
 
   const onSubmit = async (e) => {
@@ -91,7 +119,7 @@ export default function ProfileSetupPage() {
         phone: form.phone.trim(),
       };
 
-      const { ok, data } = await apiFetch("/api/me/profile", {
+      const { ok, data } = await apiFetch("/me/profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -106,14 +134,11 @@ export default function ProfileSetupPage() {
         return;
       }
 
-      // 서버 저장 성공 → 전역 me 동기화가 끝날 때까지 기다림
       await refreshMe();
 
       alert("프로필이 저장되었습니다!");
-      // window.location.href = "/me";
       window.location.href = "/";
-      
-      // 홈 진입 시 ProfileGate 한 번만 우회
+
       navigate("/", {
         replace: true,
         state: { profileCompleted: true, bypassProfileGateOnce: true },
@@ -201,6 +226,66 @@ export default function ProfileSetupPage() {
           />
           {fieldErrors.phone && <div className="invalid-feedback">{fieldErrors.phone}</div>}
         </div>
+
+        {/* ===== 약관 동의 블록 (전화번호 아래, 저장 위) ===== */}
+        <div className="mb-3 border rounded p-3 bg-light">
+          <div className="form-check mb-2">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              id="agreeAll"
+              checked={agreeAll}
+              onChange={toggleAgreeAll}
+            />
+            <label className="form-check-label fw-semibold" htmlFor="agreeAll">
+              모든 약관에 동의합니다.
+            </label>
+          </div>
+
+          <div className="d-flex justify-content-between align-items-start">
+            <div className="form-check">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="agreeService"
+                checked={agreeService}
+                onChange={toggleAgreeService}
+              />
+              <label className="form-check-label" htmlFor="agreeService">
+                WIThSHOP 이용 약관에 동의합니다.&nbsp;
+                <span className="text-primary fw-semibold">(필수)</span>
+              </label>
+            </div>
+
+            <button
+              type="button"
+              className="btn btn-link p-0"
+              onClick={() => setShowTerms((s) => !s)}
+              aria-expanded={showTerms}
+              aria-controls="termsDetails"
+            >
+              상세보기 {showTerms ? "▴" : "▾"}
+            </button>
+          </div>
+
+          {showTerms && (
+            <div id="termsDetails" className="mt-2 small text-muted">
+              <div className="border rounded p-2 bg-white">
+                <strong>WIThSHOP 개인정보 수집·이용 안내(요약)</strong>
+                <ul className="mb-1 mt-2">
+                  <li>수집 항목: 이름, 생년월일, 성별, 전화번호</li>
+                  <li>수집 목적: 본인 확인, 회원 관리, 고객 지원</li>
+                  <li>보관 기간: 회원 탈퇴 시까지 또는 관련 법령에 따른 기간</li>
+                  <li>동의 거부 권리: 동의하지 않을 수 있으나, 서비스 이용이 제한될 수 있습니다.</li>
+                </ul>
+                전체 약관은 추후 “약관 전문” 페이지에서 확인하실 수 있습니다.
+              </div>
+            </div>
+          )}
+
+          {termsError && <div className="text-danger mt-2">{termsError}</div>}
+        </div>
+        {/* ===== 약관 동의 블록 끝 ===== */}
 
         <div className="d-flex gap-2">
           <button className="btn btn-primary" type="submit" disabled={submitting}>

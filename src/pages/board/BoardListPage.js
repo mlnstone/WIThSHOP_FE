@@ -34,7 +34,7 @@ export default function BoardListPage() {
   // 내 정보
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
-    apiFetch("/api", {
+    apiFetch("", {
       headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     })
       .then(({ ok, data }) => setMe(ok ? data : null))

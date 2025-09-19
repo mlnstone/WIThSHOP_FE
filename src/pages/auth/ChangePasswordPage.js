@@ -34,7 +34,7 @@ export default function ChangePasswordPage() {
             setSubmitting(true);
             const token = localStorage.getItem("accessToken");
 
-            const { ok, status, data } = await apiFetch("/api/me/password", {
+            const { ok, status, data } = await apiFetch("/me/password", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
