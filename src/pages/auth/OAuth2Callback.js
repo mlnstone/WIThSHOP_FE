@@ -47,7 +47,7 @@ export default function OAuth2Callback() {
         }
       }
 
-      // 먼저 /api/me로 캐시 시도
+      // 먼저 /me로 캐시 시도
       const ok = await fetchMeAndCache();
 
       // 실패하면 JWT에서 임시 이름

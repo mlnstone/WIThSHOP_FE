@@ -18,7 +18,7 @@ export default function ProfileGate({ children }) {
       return;
     }
 
-    // 아직 /api/me 로딩 전이면 아무것도 하지 않음
+    // 아직 /me 로딩 전이면 아무것도 하지 않음
     if (!hydrated) return;
 
     // 비로그인 사용자는 게이트 대상 아님(공용 페이지에서 로그인 페이지로 튕기는 것 방지)

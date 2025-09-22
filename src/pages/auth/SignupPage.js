@@ -1,5 +1,5 @@
 // src/pages/SignupPage.js
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { apiFetch } from "../../services/api";
 import "./SignupPage.css";
@@ -11,6 +11,10 @@ const emailRule = /\S+@\S+\.\S+/;                                     // 간단 
 const today = new Date().toISOString().slice(0, 10);
 const minBirth = "1900-01-01";
 
+// OTP 정책(백엔드와 맞춤)
+const OTP_TTL_SEC = 180;   // 3분
+const COOLDOWN_SEC = 60;   // 60초
+
 export default function SignupPage() {
   const [form, setForm] = useState({
     email: "",
@@ -20,6 +24,7 @@ export default function SignupPage() {
     birth: "",
     gender: "",  // "M" | "W"
     phone: "",
+    code: "",    // ✅ 인증번호
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -30,7 +35,25 @@ export default function SignupPage() {
   const [emailChecked, setEmailChecked] = useState(false);
   const [emailAvailable, setEmailAvailable] = useState(false);
 
+  // ✅ 번호 인증 상태
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [cooldownLeft, setCooldownLeft] = useState(0);
+  const [otpTimerLeft, setOtpTimerLeft] = useState(0);
+
+  const cooldownRef = useRef(null);
+  const otpTimerRef = useRef(null);
+
   const navigate = useNavigate();
+
+  useEffect(() => {
+    return () => {
+      if (cooldownRef.current) clearInterval(cooldownRef.current);
+      if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+    };
+  }, []);
 
   // 이메일 형식 즉시검증: 값이 바뀌면 즉시 메시지 갱신
   const emailFormatValid = useMemo(
@@ -76,6 +99,17 @@ export default function SignupPage() {
         }
       }
 
+      // 전화번호 바꾸면 인증 상태 리셋
+      if (name === "phone") {
+        setOtpVerified(false);
+        setOtpSent(false);
+        setForm((f2) => ({ ...f2, code: "" }));
+        if (cooldownRef.current) clearInterval(cooldownRef.current);
+        if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+        setCooldownLeft(0);
+        setOtpTimerLeft(0);
+      }
+
       return next;
     });
     setError("");
@@ -111,6 +145,10 @@ export default function SignupPage() {
     else if (!phoneRule.test(form.phone))
       fe.phone = "전화번호 형식이 올바르지 않습니다.";
 
+    // ✅ 서버에서도 최종 검증하지만, 프론트에서 미리 강제
+    if (!form.code) fe.code = "인증번호를 입력하세요.";
+    if (!otpVerified) fe.code = "전화번호 인증을 완료해주세요.";
+
     setFieldErrors(fe);
     return Object.keys(fe).length === 0;
   };
@@ -144,6 +182,92 @@ export default function SignupPage() {
     }
   };
 
+  // ✅ 인증번호 요청
+  const onRequestCode = async () => {
+    if (!form.phone) return alert("전화번호를 입력하세요.");
+    if (!phoneRule.test(form.phone)) return alert("전화번호 형식이 올바르지 않습니다.");
+    if (cooldownLeft > 0) return;
+
+    setOtpSending(true);
+    try {
+      const { ok, data } = await apiFetch("/auth/phone/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: form.phone.trim() }),
+      });
+      if (!ok) {
+        alert(data?.message || "인증번호 전송에 실패했습니다.");
+        return;
+      }
+
+      setOtpSent(true);
+      setOtpVerified(false);
+      // 쿨다운 60초
+      setCooldownLeft(COOLDOWN_SEC);
+      if (cooldownRef.current) clearInterval(cooldownRef.current);
+      cooldownRef.current = setInterval(() => {
+        setCooldownLeft((sec) => {
+          if (sec <= 1) {
+            clearInterval(cooldownRef.current);
+            return 0;
+          }
+          return sec - 1;
+        });
+      }, 1000);
+
+      // OTP 유효시간 180초
+      setOtpTimerLeft(OTP_TTL_SEC);
+      if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+      otpTimerRef.current = setInterval(() => {
+        setOtpTimerLeft((sec) => {
+          if (sec <= 1) {
+            clearInterval(otpTimerRef.current);
+            return 0;
+          }
+          return sec - 1;
+        });
+      }, 1000);
+
+      alert("인증번호를 전송했습니다. 3분 이내에 입력하세요.");
+    } catch {
+      alert("인증번호 전송 중 오류가 발생했습니다.");
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
+  // ✅ 인증번호 확인
+  const onVerifyCode = async () => {
+    if (!form.phone) return alert("전화번호를 입력하세요.");
+    if (!form.code) return alert("인증번호를 입력하세요.");
+    setOtpVerifying(true);
+    try {
+      const { ok, data } = await apiFetch("/auth/phone/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: form.phone.trim(), code: form.code.trim() }),
+      });
+      if (!ok) {
+        alert(data?.message || "인증에 실패했습니다.");
+        setOtpVerified(false);
+        return;
+      }
+      // 백엔드가 { verified: true } 형식이라 가정
+      if (data?.verified) {
+        setOtpVerified(true);
+        alert("전화번호 인증이 완료되었습니다.");
+      } else {
+        setOtpVerified(false);
+        alert("인증에 실패했습니다.");
+      }
+    } catch {
+      setOtpVerified(false);
+      alert("인증 중 오류가 발생했습니다.");
+    } finally {
+      setOtpVerifying(false);
+    }
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -160,6 +284,7 @@ export default function SignupPage() {
         birth: form.birth.trim(),
         gender: form.gender,
         phone: form.phone.trim(),
+        code: form.code.trim(), // ✅ DTO에 맞춰 전송
       };
 
       const { ok, data } = await apiFetch("/members/sign-up", {
@@ -180,6 +305,8 @@ export default function SignupPage() {
       setSubmitting(false);
     }
   };
+
+  const formatSec = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
   return (
     <div className="signup-sheet">
@@ -270,18 +397,57 @@ export default function SignupPage() {
         </div>
         {fieldErrors.birth && <div className="field-error">{fieldErrors.birth}</div>}
 
-        {/* 전화번호 */}
+        {/* 전화번호 + 인증요청 */}
         <label className="signup-label mt-3">전화번호</label>
-        <div className={`line-input ${fieldErrors.phone ? "is-error" : ""}`}>
+        <div className={`line-input email-check-row ${fieldErrors.phone ? "is-error" : ""}`}>
           <input
             name="phone"
             value={form.phone}
             onChange={onChange}
-            placeholder="전화번호를 입력하세요"
+            placeholder="전화번호를 입력하세요 (예: 01012345678)"
             required
           />
+          <button
+            type="button"
+            className="check-btn"
+            onClick={onRequestCode}
+            disabled={otpSending || cooldownLeft > 0 || !form.phone || !phoneRule.test(form.phone)}
+            title={!form.phone ? "전화번호를 입력하세요" : undefined}
+          >
+            {otpSending ? "전송 중..." : cooldownLeft > 0 ? `재전송(${cooldownLeft}s)` : (otpSent ? "재전송" : "인증번호 전송")}
+          </button>
         </div>
         {fieldErrors.phone && <div className="field-error">{fieldErrors.phone}</div>}
+
+        {/* 인증번호 입력 + 검증 */}
+        <label className="signup-label mt-3">인증번호</label>
+        <div className={`line-input email-check-row ${fieldErrors.code ? "is-error" : ""}`}>
+          <input
+            name="code"
+            value={form.code}
+            onChange={onChange}
+            placeholder="인증번호 6자리"
+            inputMode="numeric"
+            maxLength={6}
+            disabled={!otpSent || otpVerified}
+            required
+          />
+          <button
+            type="button"
+            className="check-btn"
+            onClick={onVerifyCode}
+            disabled={otpVerifying || !otpSent || !form.code || otpVerified}
+          >
+            {otpVerified ? "인증 완료" : (otpVerifying ? "확인 중..." : "인증 확인")}
+          </button>
+        </div>
+        <div className="hint-row">
+          {otpSent && !otpVerified && otpTimerLeft > 0 && (
+            <small>남은 시간: {formatSec(otpTimerLeft)}</small>
+          )}
+          {otpVerified && <small>인증이 완료되었습니다.</small>}
+        </div>
+        {fieldErrors.code && <div className="field-error">{fieldErrors.code}</div>}
 
         {/* 성별 */}
         <label className="signup-label mt-3">성별</label>

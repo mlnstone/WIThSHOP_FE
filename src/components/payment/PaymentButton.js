@@ -43,7 +43,7 @@
 //     const requestPay = useCallback(async () => {
 //         try {
 //             // 1) 사전검증 호출
-//             const prepRes = await fetch(`${BACKEND}/api/payments/prepare`, {
+//             const prepRes = await fetch(`${BACKEND}/payments/prepare`, {
 //                 method: "POST",
 //                 headers,
 //                 body: JSON.stringify({ quantity }),
@@ -89,7 +89,7 @@
 //                     if (rsp.success) {
 //                         try {
 //                             // 3) 사후검증 호출
-//                             const verifyRes = await fetch(`${BACKEND}/api/payments/verify`, {
+//                             const verifyRes = await fetch(`${BACKEND}/payments/verify`, {
 //                                 method: "POST",
 //                                 headers,
 //                                 body: JSON.stringify({

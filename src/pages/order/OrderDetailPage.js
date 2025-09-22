@@ -102,7 +102,7 @@ export default function OrderDetailPage() {
     if (!window.confirm("이 주문을 취소하시겠습니까?")) return;
     try {
       // 1) 환불
-      const refund = await apiFetch(`/api/payments/refund`, {
+      const refund = await apiFetch(`/payments/refund`, {
         method: "POST",
         headers: { ...authHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({

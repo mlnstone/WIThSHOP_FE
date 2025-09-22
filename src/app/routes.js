@@ -19,6 +19,7 @@ import OrderDetailPage from "../pages/order/OrderDetailPage";
 import MyOrdersPage from "../pages/order/MyOrdersPage";
 import ReviewWritePage from "../pages/reviews/ReviewWritePage";
 import MyReviewsPage from "../pages/reviews/MyReviewsPage";
+import BestByText from "../pages/category/BestByText";
 
 function hasToken() {
   return !!localStorage.getItem("accessToken");
@@ -176,6 +177,10 @@ export default function AppRoutes({ user, onLogout }) {
 
       {/* OAuth 콜백 */}
       <Route path="/oauth2/callback" element={<OAuth2Callback />} />
+
+      {/* ai */}
+      <Route path="/category/best-by-text" element={<BestByText />} />
+
     </Routes>
   );
 }

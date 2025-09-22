@@ -1,4 +1,4 @@
-// src/lib/payment/onBuyNow.js
+// src/components/payment/onBuyNow.js
 
 // (선택) PortOne SDK 로더: public/index.html에 스크립트를 넣지 않았다면 사용
 async function ensureIamportLoaded() {
@@ -96,7 +96,7 @@ export async function onBuyNow(menu, qty, options = {}) {
         return false;
       }
 
-      const prepRes = await fetch(`${backend}/api/payments/prepare-by-items`, {
+      const prepRes = await fetch(`${backend}/payments/prepare-by-items`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -125,7 +125,7 @@ export async function onBuyNow(menu, qty, options = {}) {
       amount = prep.amount;
     } else {
       // 기존 단순 사전검증 (수량만)
-      const prepRes = await fetch(`${backend}/api/payments/prepare`, {
+      const prepRes = await fetch(`${backend}/payments/prepare`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -214,7 +214,7 @@ const payTitle = (() => {
     if (!payOk || payOk === false) return false;
 
     // 3) 사후검증
-    const verifyRes = await fetch(`${backend}/api/payments/verify`, {
+    const verifyRes = await fetch(`${backend}/payments/verify`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

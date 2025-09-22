@@ -1,4 +1,4 @@
-// src/pages/checkout/BenefitsPage.js
+// src/pages/checkout/CheckoutPage.js
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { onBuyNow as payNow } from "../../components/payment/onBuyNow";
@@ -40,7 +40,6 @@ export default function BenefitsPage() {
   useEffect(() => {
     if (!menuId) return;
     let alive = true;
-
     (async () => {
       try {
         const r1 = await apiFetch(`/menus/${menuId}`);
@@ -48,39 +47,56 @@ export default function BenefitsPage() {
 
         const r2 = await apiFetch(`/config/shipping-fee`);
         if (alive && r2.ok && typeof r2.data === "number") setShippingFee(r2.data);
-      } catch {
-        /* ignore */
-      }
+      } catch {/* ignore */ }
     })();
-
     return () => { alive = false; };
   }, [menuId]);
 
   // 내 쿠폰/포인트
   useEffect(() => {
-    if (!me) return;
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      setPointBalance(0);
+      setMyCoupons([]);
+      return;
+    }
+
     let alive = true;
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+    };
 
     (async () => {
       try {
-        const headers = { Accept: "application/json", ...getAuth() };
+        const [rp, rc] = await Promise.all([
+          apiFetch("/points", { headers }),
+          apiFetch("/coupons", { headers }),
+        ]);
 
-        const rp = await apiFetch(`/points`, { headers });
-        if (alive && rp.ok && rp.data && typeof rp.data.balance === "number") {
-          setPointBalance(rp.data.balance);
-        }
+        if (!alive) return;
 
-        const rc = await apiFetch(`/coupons`, { headers });
-        if (alive && rc.ok && Array.isArray(rc.data)) {
-          setMyCoupons(rc.data);
+        // 포인트
+        const balance =
+          rp?.ok && typeof rp?.data?.balance === "number" ? rp.data.balance : 0;
+        setPointBalance(balance);
+
+        // 쿠폰 (문자열 응답까지 대비)
+        let raw = rc?.data;
+        if (typeof raw === "string") {
+          try { raw = JSON.parse(raw); } catch { }
         }
+        setMyCoupons(Array.isArray(raw) ? raw : []);
       } catch {
-        /* ignore */
+        if (alive) {
+          setPointBalance(0);
+          setMyCoupons([]);
+        }
       }
     })();
 
     return () => { alive = false; };
-  }, [me]);
+  }, []); // ← me 의존 제거
 
   // 금액 관련
   const price = menu?.salePrice ?? menu?.price ?? 0;
@@ -88,12 +104,11 @@ export default function BenefitsPage() {
 
   // 쿠폰 미리보기
   useEffect(() => {
-    if (!me || !selectedCouponId) {
+    if (meLoading || !me || !selectedCouponId) {
       setCouponPreview(0);
       return;
     }
     let alive = true;
-
     (async () => {
       try {
         const headers = { Accept: "application/json", ...getAuth() };
@@ -101,21 +116,17 @@ export default function BenefitsPage() {
           `/coupons/${selectedCouponId}/preview?orderAmount=${subtotal}`,
           { headers }
         );
-        if (!r.ok) {
-          setCouponPreview(0);
-          return;
-        }
+        if (!r.ok) { setCouponPreview(0); return; }
         const j = r.data;
-        if (alive && j && typeof j.discountApplied === "number") {
+        if (alive && typeof j?.discountApplied === "number") {
           setCouponPreview(j.discountApplied);
         }
       } catch {
         setCouponPreview(0);
       }
     })();
-
     return () => { alive = false; };
-  }, [me, selectedCouponId, subtotal]);
+  }, [meLoading, me, selectedCouponId, subtotal]);
 
   // 쿠폰 라벨
   const couponLabel = (c) => {
@@ -157,23 +168,16 @@ export default function BenefitsPage() {
   const onChangePoints = (e) => {
     const raw = normalizeInt(e.target.value);
     setUsePoints(raw);
-
-    if (raw > maxUsablePoints) {
-      setPointError(`최대 ${maxUsablePoints.toLocaleString()}P 까지 사용 가능합니다.`);
-    } else {
-      setPointError("");
-    }
+    if (raw > maxUsablePoints) setPointError(`최대 ${maxUsablePoints.toLocaleString()}P 까지 사용 가능합니다.`);
+    else setPointError("");
   };
 
   const onBlurPoints = (e) => {
     const raw = normalizeInt(e.target.value);
     const clamped = Math.min(raw, maxUsablePoints);
     if (clamped !== raw) setUsePoints(clamped);
-    if (clamped > maxUsablePoints) {
-      setPointError(`최대 ${maxUsablePoints.toLocaleString()}P 까지 사용 가능합니다.`);
-    } else {
-      setPointError("");
-    }
+    if (clamped > maxUsablePoints) setPointError(`최대 ${maxUsablePoints.toLocaleString()}P 까지 사용 가능합니다.`);
+    else setPointError("");
   };
 
   // 실제 계산에 쓰이는 값
@@ -181,10 +185,7 @@ export default function BenefitsPage() {
   const expectedPay = Math.max(0, subtotal - (couponPreview || 0) - expectedPoints + shippingFee);
 
   const handlePay = useCallback(async () => {
-    if (!me) {
-      navigate("/login");
-      return;
-    }
+    if (!me) { navigate("/login"); return; }
 
     const safeUsePoints = expectedPoints;
 
@@ -202,6 +203,8 @@ export default function BenefitsPage() {
       userCouponId: selectedCouponId || null,
       usePoints: safeUsePoints,
       useDynamicScript: true,
+      backend: process.env.REACT_APP_BACKEND ?? "",
+      impCode: process.env.REACT_APP_IAMPORT_MERCHANT || "",
       m_redirect_url: `${window.location.origin}/me/orders`,
     });
   }, [me, menu, qty, selectedCouponId, expectedPoints, navigate]);
@@ -284,6 +287,7 @@ export default function BenefitsPage() {
           이전으로
         </button>
         <button
+          type="button"
           className="btn btn-dark flex-grow-1"
           onClick={handlePay}
           disabled={expectedPay <= 0 && shippingFee <= 0}

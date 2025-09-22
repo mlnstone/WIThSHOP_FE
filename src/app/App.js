@@ -7,6 +7,7 @@ import AppRoutes from "./routes";
 import ProfileGate from "./ProfileGate";
 import Footer from "../components/layout/Footer";
 import PopupBox from "../components/common/PopupBox";
+import BestByTextWidget from "../components/ai/BestByTextWidget";
 
 function AppContent() {
   const { user, logout } = useUser();
@@ -22,6 +23,7 @@ function AppContent() {
         </main>
       </ProfileGate>
       <Footer />
+      <BestByTextWidget />
 
       {isHome && (
         <>
